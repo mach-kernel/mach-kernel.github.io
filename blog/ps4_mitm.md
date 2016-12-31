@@ -124,6 +124,7 @@ end
 use Rack::Static, urls: {
   '/updatelist/' => 'updatelist/ps4-updatelist.xml',
   '/' => 'index.html'
+}, root: 'web'
   
 # Shitty catchall
 error = proc do |env|
