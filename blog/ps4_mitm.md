@@ -80,7 +80,7 @@ Finally, an `xml` file. Let's have a look!
 
 Alright, that's not too bad then. Looks like we should tamper with that `force_update` key. 
 
-It seems that the author of PSProxy has already done this for us, so let's start there, with this file:
+It seems that the author of PSProxy has already done this for us, so let's start there, with this file. Some report that it works, some do not -- let's find out. 
 
 ```xml
 <?xml version="1.0" ?>
@@ -101,4 +101,44 @@ It seems that the author of PSProxy has already done this for us, so let's start
 	</region>
 </update_data_list>
 ```
+
+#### Replacing update XML
+
+##### Config
+
+Now, we _can_ use `mitmproxy`, but it doesn't gracefully support full file replacement without writing a script. Let's just use `dnsmasq`, as setup is much easier. To set up, just add `address=/fus01.ps4.update.playstation.net/[your LAN IP]` to your `dnsmaq` config. 
+
+##### Serving the file
+
+Rack has a nice DSL for making rewrite rules. No need to make some shitty app or write httpd rewrite rules. To configure Rack, I [consulted the documentation](http://www.rubydoc.info/github/rack/rack/Rack/Static) and used [Rack::Rewrite](https://github.com/jtrupiano/rack-rewrite). My configuration file is below; it also has a rewrite rule for the "User Guide" settings menu item. To make that work, just make another `dnsmasq` rule as above. 
+
+```ruby
+require 'rack/rewrite'
+
+use Rack::Rewrite do 
+  # User guide
+  r301 '/document/en/ps4/index.html', '/'
+  r301 '/update/ps4/list/us/ps4-updatelist.xml', '/updatelist'
+end
+
+use Rack::Static, urls: {
+  '/updatelist/' => 'updatelist/ps4-updatelist.xml',
+  '/' => 'index.html'
+  
+# Shitty catchall
+error = proc do |env|
+  [ 404, { 'Content-Type'  => 'text/html' }, ['404 - page not found'] ]
+end
+
+run error
+```
+
+And now, to serve:
+
+```bash
+gem install rack rack-rewrite
+rackup -o 0.0.0.0 -p 80
+```
+
+
 
