@@ -106,7 +106,7 @@ It seems that the author of PSProxy has already done this for us, so let's start
 
 ##### Config
 
-Now, we _can_ use `mitmproxy`, but it doesn't gracefully support full file replacement without writing a script. Let's just use `dnsmasq`, as setup is much easier. To set up, just add `address=/fus01.ps4.update.playstation.net/[your LAN IP]` to your `dnsmaq` config. 
+Now, we _can_ use `mitmproxy`, but it doesn't gracefully support full file replacement without writing a script. Let's just use `dnsmasq`, as setup is much easier. To set up, just add `address=/fus01.ps4.update.playstation.net/[your LAN IP]` to your `dnsmasq` config. 
 
 ##### Serving the file
 
@@ -122,7 +122,9 @@ use Rack::Rewrite do
 end
 
 use Rack::Static, urls: {
+  # I am probably doing this wrong, but it will throw 404 if you provide a `/`-less link and vice versa and will not send data. Bug?
   '/updatelist/' => 'updatelist/ps4-updatelist.xml',
+  '/updatelist' => 'updatelist/ps4-updatelist.xml',
   '/' => 'index.html'
 }, root: 'web'
   
