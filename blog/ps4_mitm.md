@@ -148,3 +148,35 @@ Recall that earlier, we noticed that the PS4 only checks for the update metadata
 ![error](http://i.imgur.com/upNAxvd.jpg)
 
 I am on firmware 4.05; it seems that there is some other assertion happening. Time to modify the `xml` some more. 
+
+### More Updatelist Fun
+
+Since the PSProxy-doctored `xml` doesn't work, let's try to doctor the latest one ourselves. The one below has all of the `level1_system_version` and `level2_system_version` fields set to `4.050.000`. It yields a `CE-34701-5`, "Update the system software to use network features.". Also changing other fields to `4.05` yields the same error.
+
+```xml
+<update_data_list>
+	<region id="us">
+		<force_update>
+			<system level0_system_version="04.050.000" level1_system_version="04.050.000">
+				<product_requirement id="CUSA03274" level1_system_version="04.050.000" level2_system_version="04.050.000"/>
+				<product_requirement id="CUSA05633" level1_system_version="04.050.000" level2_system_version="04.050.000"/>
+				<product_requirement id="CUSA06200" level1_system_version="04.050.000" level2_system_version="04.050.000"/>
+				<product_requirement id="CUSA05880" level1_system_version="04.050.000" level2_system_version="04.050.000"/>
+			</system>
+		</force_update>
+		<system_pup label="4.05" sdk_version="04.050.001" version="04.050.000">
+			<update_data update_type="full">
+				<image size="312236032">http://dus01.ps4.update.playstation.net/update/ps4/image/2016_1201/sys_908b5f52e82c36536707844df67961d8/PS4UPDATE.PUP?dest=us
+				</image>
+			</update_data>
+		</system_pup>
+		<recovery_pup type="default">
+			<system_pup label="4.05" sdk_version="04.050.001" version="04.050.000"/>
+			<image size="891231744">http://dus01.ps4.update.playstation.net/update/ps4/image/2016_1201/rec_edffaf60c694b226f9123e634ed6aa00/PS4UPDATE.PUP?dest=us
+			</image>
+		</recovery_pup>
+	</region>
+</update_data_list>
+```
+
+Removing the firmware file links from the XML invokes the same `SU-30703` error as before. While disappointing, this yields some useful information. We can categorize this error as some kind of XML validation error, and then the former error that told us we should update our software as the actual assertion failure. Where do we go from here?
