@@ -12,4 +12,4 @@ I am the director general for [Awesome IT](http://ait.nyc) and also currently wo
 
 Currently, for those that want to retain lower firmware versions of Playstation 4 consoles, there is no way to go online without updating. Let's find out if there is something we can defeat.
 
-[Read](#)
+[Read](/blog/ps4-mitm)
