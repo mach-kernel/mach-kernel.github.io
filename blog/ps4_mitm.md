@@ -141,5 +141,10 @@ gem install rack rack-rewrite
 rackup -o 0.0.0.0 -p 80
 ```
 
+#### Attempt at bypass
 
+Recall that earlier, we noticed that the PS4 only checks for the update metadata at boot or at first network connection. To begin, make sure `dnsmasq` and `mitmproxy` are both running. DNS will handle the file intercept/redirect step, and we can still sniff what happens in the meantime (e.g. maybe we defeated one assertion and need to defeat another). We turn our console off, and back on again, and notice our response...
 
+![error](http://i.imgur.com/upNAxvd.jpg)
+
+I am on firmware 4.05; it seems that there is some other assertion happening. Time to modify the `xml` some more. 
