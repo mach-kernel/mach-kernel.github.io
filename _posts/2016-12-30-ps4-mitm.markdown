@@ -2,7 +2,7 @@
 layout: post
 title: PS4 Network MITM
 date: 2016-12-30T00:30:00.000Z
-categories: update
+categories: hacking
 ---
 
 I decided that I wanted to run my PS4 through a proxy so I can see if the version assertion could possibly be 'fixed' by some network manipulation. I found a bunch of things out but was unsuccessful.
