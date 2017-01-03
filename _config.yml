@@ -1,7 +1,23 @@
-title: david stancu
-description: software engineer and resident car enthusiast
-show_downloads: false
-theme: jekyll-theme-cayman
+# Site settings
 
-gems:
-  - jekyll-mentions
+title: David # Title of your site
+email: dstancu@nyu.edu
+
+description: > # this means to ignore newlines until "baseurl:"
+  My name is David. I write software and build companies.
+baseurl: "" # the subpath of your site, e.g. /blog/
+url: "http://davidstancu.me" # the base hostname & protocol for your site
+
+# Social links.
+# Replace the word 'example' with your username if you want to include the icon in the left sidebar
+# Delete the word 'example' if you don't want to include the icon in the left sidebar
+
+twitter_username: # Replace this with your Twitter username
+github_username: mach-kernel  # Replace this with your GitHub username
+linkedin_username:     # Replace this with your LinkedIn username
+google_plus_username:  # Replace this with your Google+ username
+facebook_username:     # Replace this with your Facebook username
+dribbble_username:     # Replace this with your Dribbble username
+
+# Build settings
+markdown: kramdown
