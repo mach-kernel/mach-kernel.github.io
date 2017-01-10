@@ -1,6 +1,6 @@
 ---
 layout: post
-title: OS 9 Retrolust: Part 1
+title: OS 9 Retrolust, Part 1
 date: 2017-01-04T21:47:32Z
 categories: retrolust
 ---
