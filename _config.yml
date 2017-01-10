@@ -1,4 +1,5 @@
-# Site settings
+gems:
+  - jekyll-minifier
 
 title: David # Title of your site
 email: dstancu@nyu.edu
@@ -6,7 +7,7 @@ email: dstancu@nyu.edu
 description: > # this means to ignore newlines until "baseurl:"
   My name is David. I write software and build companies.
 baseurl: "" # the subpath of your site, e.g. /blog/
-url: "http://davidstancu.me" # the base hostname & protocol for your site
+url: "https://davidstancu.me" # the base hostname & protocol for your site
 
 # Social links.
 # Replace the word 'example' with your username if you want to include the icon in the left sidebar
