@@ -1,8 +1,9 @@
 ---
 layout: post
-title: OS 9 Retrolust, Part 1
-date: 2017-01-04T21:47:32Z
+title: 'OS 9 Retrolust, Part 1'
+date: 2017-01-04T21:47:32.000Z
 categories: retrolust
+published: true
 ---
 
 My buddy Ari is giving me his PowerMac G4 MDD 1.25. I've always collected old Apple machines but this is going to be quite an experience for me. When I was younger, my parents bought me an iBook G4 1.42 14" to do schoolwork on, but see -- it was a "New World" Mac that was never capable of running Mac OS 9. The only reason for this I suspect is some kind of assertion in Apple's [OpenFirmware](https://en.wikipedia.org/wiki/Open_Firmware) flavor. Fun fact (if you didn't already read the Wikipedia page): Sun is responsible for OF and was kind of a big deal back in the day. Never as big as our new EFI standards, but I digress.
