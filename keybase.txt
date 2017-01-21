@@ -1,0 +1,54 @@
+==================================================================
+https://keybase.io/dstancu
+--------------------------------------------------------------------
+
+I hereby claim:
+
+  * I am an admin of https://davidstancu.me
+  * I am dstancu (https://keybase.io/dstancu) on keybase.
+  * I have a public key ASCXyJ-CBcX-KWIaYJtMJHwKT6lnpf3K4ovLWBj0cvh4-Qo
+
+To do so, I am signing this object:
+
+{
+    "body": {
+        "key": {
+            "eldest_kid": "010100e4ae2caac56336c8d72f10988a6f3d398b6ff6d7f7394f4255197cca1560bd0a",
+            "host": "keybase.io",
+            "kid": "012097c89f8205c5fe29621a609b4c247c0a4fa967a5fdcae28bcb5818f472f878f90a",
+            "uid": "6f8a97e9d1930ed6bde52d350782a719",
+            "username": "dstancu"
+        },
+        "service": {
+            "hostname": "davidstancu.me",
+            "protocol": "https:"
+        },
+        "type": "web_service_binding",
+        "version": 1
+    },
+    "client": {
+        "name": "keybase.io go client",
+        "version": "1.0.18"
+    },
+    "ctime": 1484957464,
+    "expire_in": 504576000,
+    "merkle_root": {
+        "ctime": 1484957260,
+        "hash": "dc5705010ff19b7b8b437fb5359a6f6371b97b57f99406d622dfe21b7ac1f319f5b02d99020643dddd0dcfebd32a220f53ebff04921d0ee29fc92371d24c5d60",
+        "seqno": 809518
+    },
+    "prev": "6b3d17b09da1b69aab09322812f8f174230c78049231988768bd4c1de04500ba",
+    "seqno": 6,
+    "tag": "signature"
+}
+
+which yields the signature:
+
+hKRib2R5hqhkZXRhY2hlZMOpaGFzaF90eXBlCqNrZXnEIwEgl8ifggXF/iliGmCbTCR8Ck+pZ6X9yuKLy1gY9HL4ePkKp3BheWxvYWTFAvV7ImJvZHkiOnsia2V5Ijp7ImVsZGVzdF9raWQiOiIwMTAxMDBlNGFlMmNhYWM1NjMzNmM4ZDcyZjEwOTg4YTZmM2QzOThiNmZmNmQ3ZjczOTRmNDI1NTE5N2NjYTE1NjBiZDBhIiwiaG9zdCI6ImtleWJhc2UuaW8iLCJraWQiOiIwMTIwOTdjODlmODIwNWM1ZmUyOTYyMWE2MDliNGMyNDdjMGE0ZmE5NjdhNWZkY2FlMjhiY2I1ODE4ZjQ3MmY4NzhmOTBhIiwidWlkIjoiNmY4YTk3ZTlkMTkzMGVkNmJkZTUyZDM1MDc4MmE3MTkiLCJ1c2VybmFtZSI6ImRzdGFuY3UifSwic2VydmljZSI6eyJob3N0bmFtZSI6ImRhdmlkc3RhbmN1Lm1lIiwicHJvdG9jb2wiOiJodHRwczoifSwidHlwZSI6IndlYl9zZXJ2aWNlX2JpbmRpbmciLCJ2ZXJzaW9uIjoxfSwiY2xpZW50Ijp7Im5hbWUiOiJrZXliYXNlLmlvIGdvIGNsaWVudCIsInZlcnNpb24iOiIxLjAuMTgifSwiY3RpbWUiOjE0ODQ5NTc0NjQsImV4cGlyZV9pbiI6NTA0NTc2MDAwLCJtZXJrbGVfcm9vdCI6eyJjdGltZSI6MTQ4NDk1NzI2MCwiaGFzaCI6ImRjNTcwNTAxMGZmMTliN2I4YjQzN2ZiNTM1OWE2ZjYzNzFiOTdiNTdmOTk0MDZkNjIyZGZlMjFiN2FjMWYzMTlmNWIwMmQ5OTAyMDY0M2RkZGQwZGNmZWJkMzJhMjIwZjUzZWJmZjA0OTIxZDBlZTI5ZmM5MjM3MWQyNGM1ZDYwIiwic2Vxbm8iOjgwOTUxOH0sInByZXYiOiI2YjNkMTdiMDlkYTFiNjlhYWIwOTMyMjgxMmY4ZjE3NDIzMGM3ODA0OTIzMTk4ODc2OGJkNGMxZGUwNDUwMGJhIiwic2Vxbm8iOjYsInRhZyI6InNpZ25hdHVyZSJ9o3NpZ8RAFOPbdvzQARpLiyzbvgTmyNDm333kMzWEUxeFABpTVaxb+wBrHIJ2Wrw2p4enYQ2vBcKpWnTtq7ZRcEpEy8+BBqhzaWdfdHlwZSCkaGFzaIKkdHlwZQildmFsdWXEINoYLy/jfeeSQhecQJaxiyC0akH2GCNHUxLLWK7pYXkTo3RhZ80CAqd2ZXJzaW9uAQ==
+
+And finally, I am proving ownership of this host by posting or
+appending to this document.
+
+View my publicly-auditable identity here: https://keybase.io/dstancu
+
+==================================================================
