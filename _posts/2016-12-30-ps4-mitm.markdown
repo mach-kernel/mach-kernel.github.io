@@ -1,7 +1,7 @@
 ---
 layout: post
 title: PS4 Network MITM
-date: {}
+date: 
 categories: hacking
 published: true
 ---
