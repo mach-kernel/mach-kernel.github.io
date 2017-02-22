@@ -2,7 +2,7 @@
 published: true
 layout: post
 categories: ruby
-date: {}
+date: 2017-02-22T23:48:12.000Z
 ---
 [Ruby](https://ruby-lang.org) is an awesome, dynamically typed language that has very strong OO features and excellent syntatic sugar. You can write very expressive software in few lines that looks good. It should sound like music to your ears if you're coming from some kind of [ugly templated behemoth](https://en.wikipedia.org/wiki/C%2B%2B). After all, Ruby's motto is "a programmer's best friend" -- and it is -- but only if you don't suck.
 
