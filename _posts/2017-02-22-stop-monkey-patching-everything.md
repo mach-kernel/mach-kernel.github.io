@@ -91,7 +91,7 @@ Replace `Animal` with `ActiveRecord::Base` and prepare for the biggest clusterfu
 
 ## Why is it a problem?
 
-The DSL methods that they include to decorate your model with domain specific functionality now exists in *every model your project will ever have*. Additionally, the support required to do this patching/integration usually ends up adding either a large part of `active_support` or `rails` as a dependency. 
+The DSL methods that they include to decorate your model with domain specific functionality now exists in *every model your project will ever have*. Additionally, the support required to do this patching/integration usually ends up adding either a large part of `active_support` or `rails` as a dependency. This is not even the worse part; sometimes these patches will break other libraries or even `ActiveRecord` itself. 
 
 It is 2017. Myself and many other developers prefer to work on microservice oriented applications. If sharing a database is something that your architecture requires (not all of us do the most clever, 3489248923423-Kafka-shard with 8394248e+01 ElasticSearch cluster services), then you don't get to make portable models. Today while attempting to package all of our database models in an external gem, I had to read through the source of at least 5+ libraries to find out how to make their functions available without Rails. It isn't necissarily difficult to do -- but I noticed that most of the code was just to provide this convenient DSL sugar...and for no benefit at all.
 
