@@ -72,6 +72,11 @@
 
 		// Header.
 
+			if (window.location.protocol == "http:") {
+			    var restOfUrl = window.location.href.substr(5);
+			    window.location = "https:" + restOfUrl;
+			}
+
 			// Parallax background.
 
 				// Disable parallax on IE (smooth scrolling is jerky), and on mobile platforms (= better performance).
