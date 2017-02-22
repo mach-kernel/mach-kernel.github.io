@@ -1,5 +1,8 @@
 ---
-published: false
+published: true
+layout: post
+categories: ruby
+date: 2017-02-22T20:46:24.000Z
 ---
 # Stop monkeypatching everything; your library sucks
 
@@ -95,6 +98,3 @@ The DSL methods that they include to decorate your model with domain specific fu
 It is 2017. Myself and many other developers prefer to work on microservice oriented applications. If sharing a database is something that your architecture requires (not all of us do the most clever, 3489248923423-Kafka-shard with 8394248e+01 ElasticSearch cluster services), then you don't get to make portable models. Today while attempting to package all of our database models in an external gem, I had to read through the source of at least 5+ libraries to find out how to make their functions available without Rails. It isn't necissarily difficult to do -- but I noticed that most of the code was just to provide this convenient DSL sugar...and for no benefit at all.
 
 I really don't mean to sound so angry, but not everybody uses Rails for everything anymore. And that's a good thing. Our ecosystem is maturing, finding alternatives, growing. Ruby's metaprogramming facilities make it so easy for someone to write all of this seemingly "automagic" software, with include and extend hooks, _great_ reflection support, and the whole 9 yards. It also makes it 100x easier for you to forget that you are committing abuses just becuase committing them is so much fun. If Ruby is to continue maturing, we need to exercise some self control as a community -- or Ruby will become a thing of the past. And wouldn't that be a damn shame.
-
-
-
