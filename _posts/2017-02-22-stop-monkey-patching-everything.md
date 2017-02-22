@@ -2,7 +2,7 @@
 published: true
 layout: post
 categories: ruby
-date: 2017-02-22T20:46:24.000Z
+date: {}
 ---
 [Ruby](https://ruby-lang.org) is an awesome, dynamically typed language that has very strong OO features and excellent syntatic sugar. You can write very expressive software in few lines that looks good. It should sound like music to your ears if you're coming from some kind of [ugly templated behemoth](https://en.wikipedia.org/wiki/C%2B%2B). After all, Ruby's motto is "a programmer's best friend" -- and it is -- but only if you don't suck.
 
@@ -60,7 +60,7 @@ class Rabbit < Animal
 end
 ```
 
-...instead, management now wants some _synergy_ every time `#some_special_hook` is run. Your developer thinks he is clever and produces this. Including a module into every subclass seems _sooooooo_ 2006. Instead, we can type `acts_as_gluable` in our subclass! How clever!
+...instead, management now wants some _synergy_ every time `#some_important_hook` is run. Your developer thinks he is clever and produces this. Including a module into every subclass seems _sooooooo_ 2006. Instead, we can type `acts_as_gluable` in our subclass! How clever!
 
 ```ruby
 module Gluable
@@ -72,7 +72,7 @@ module Gluable
     "http://elmers.com/"
   end
 
-  def some_special_hook
+  def some_important_hook
     # overly complex and poorly tested business logic
     super
   end
@@ -87,7 +87,7 @@ end
 
 ## How NOT clever
 
-Replace `Animal` with `ActiveRecord::Base` and prepare for the biggest clusterfuck you've ever seen. Everybody thinks it's fashionable to make crude monkeypatches to the base AR class and ends up bringing in `Railtie` dependencies when their library really focuses on adding two numbers or doing some geocoding. Here is an example of a geocoding library [doing a lot of not-geocoding](https://github.com/geokit/geokit-rails/blob/master/lib/geokit-rails/railtie.rb). Additionally, to facilitate their mess, they will override core ActiveRecord lifecycle hooks (e.g. `#after_*`), or append their own methods in `ActiveRecord::FinderMethods` that depend on other methods in that _external module_. Are you crying yet? You should be. 
+Replace `Animal` with `ActiveRecord::Base` and prepare for the biggest clusterfuck you've ever seen. Everybody thinks it's fashionable to make crude monkeypatches to the base AR class and ends up bringing in `Railtie` dependencies when their library really focuses on adding two numbers or doing some geocoding. Here is an example of a geocoding library [doing a lot of not-geocoding](https://github.com/geokit/geokit-rails/blob/master/lib/geokit-rails/railtie.rb). Additionally, to facilitate their mess, they will override core ActiveRecord lifecycle hooks (e.g. `#before/after_*`), or append their own methods in `ActiveRecord::FinderMethods` that depend on other methods in that _external module_. Are you crying yet? You should be. 
 
 ## Why is it a problem?
 
