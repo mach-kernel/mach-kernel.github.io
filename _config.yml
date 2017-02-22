@@ -19,3 +19,8 @@ dribbble_username:     # Replace this with your Dribbble username
 
 # Build settings
 markdown: kramdown
+highlighter: rouge
+
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge

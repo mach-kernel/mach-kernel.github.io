@@ -208,6 +208,8 @@ DEPENDENCIES
   cssmin
   github-pages
   jekyll-minifier
+  kramdown
+  rouge
 
 BUNDLED WITH
    1.13.7
