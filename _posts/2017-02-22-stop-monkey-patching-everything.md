@@ -87,7 +87,7 @@ end
 
 ## How NOT clever
 
-Replace `Animal` with `ActiveRecord::Base` and prepare for the biggest clusterfuck you've ever seen. Everybody thinks it's fashionable to make crude monkeypatches to the base AR class and ends up bringing in `Railtie` dependencies when their library really focuses on adding two numbers or doing some geocoding. Here is an example of a geocoding library [doing a lot of not-geocoding](https://github.com/geokit/geokit-rails/blob/master/lib/geokit-rails/railtie.rb).
+Replace `Animal` with `ActiveRecord::Base` and prepare for the biggest clusterfuck you've ever seen. Everybody thinks it's fashionable to make crude monkeypatches to the base AR class and ends up bringing in `Railtie` dependencies when their library really focuses on adding two numbers or doing some geocoding. Here is an example of a geocoding library [doing a lot of not-geocoding](https://github.com/geokit/geokit-rails/blob/master/lib/geokit-rails/railtie.rb). Additionally, to facilitate their mess, they will override core ActiveRecord lifecycle hooks (e.g. `#after_*`), or append their own methods in `ActiveRecord::FinderMethods` that depend on other methods in that _external module_. Are you crying yet? You should be. 
 
 ## Why is it a problem?
 
