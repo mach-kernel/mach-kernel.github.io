@@ -1,8 +1,8 @@
 ---
-published: false
+published: true
 layout: post
 categories: foss
-date: {}
+date: 2017-04-17T19:16:52.000Z
 ---
 ## I made a JSON LD builder thing
 
