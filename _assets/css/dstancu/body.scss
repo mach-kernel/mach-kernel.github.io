@@ -1,8 +1,12 @@
 body {
+  background-attachment: fixed;
   background-color: $bg-dark;
+  font-family: 'Lato', sans-serif;
 }
 
 #contrast {  
   background-color: $bg-lite;
-  display: hidden;
+}
+
+.main-content {
 }
