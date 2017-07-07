@@ -1,26 +1,20 @@
 ---
-layout: default
+layout: main_well
 ---
 
-<div class="post">
-  <div class="panel panel-default">
-    <div class="panel-content">
-      <h2 class="page-header">{{ page.title }}</h2>
+<h2 class="page-header">{{ page.title }}</h2>
 
-      <div class="postmeta">
-        <span class="label label-default">
-          {% assign date_format = site.minima.date_format | default: "%b %-d, %Y" %}
-          {{ page.date | date: date_format }}
-        </span>
+<div class="postmeta">
+  <span class="label label-default">
+    {% assign date_format = site.minima.date_format | default: "%b %-d, %Y" %}
+    {{ page.date | date: date_format }}
+  </span>
 
-        <span class="label label-info">
-          {{ page.categories }}
-        </span>
-      </div>
-
-      <br />
-
-      {{ content }}
-    </div>
-  </div>
+  <span class="label label-info">
+    {{ page.categories }}
+  </span>
 </div>
+
+<br />
+
+{{ content }}
