@@ -9,4 +9,19 @@ body {
 }
 
 .main-content {
+  padding-top: 5%;
+  width: 60%;
+}
+
+.post {
+  padding: 1px 30px 30px 30px;
+  background-color: $sidebar;
+  border: 2px solid $bg-lite;
+  border-radius: 5px;
+
+  .panel, .panel-content {
+    border: 0px;
+    border-color: transparent;
+    background-color: transparent;
+  }
 }
