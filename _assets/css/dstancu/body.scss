@@ -24,4 +24,14 @@ body {
     border-color: transparent;
     background-color: transparent;
   }
+
+  .postmeta {
+    span { 
+      margin: 0 5px 0 5px; 
+
+      &:first-child {
+        margin-left: 0px;
+      }
+    }
+  }
 }
