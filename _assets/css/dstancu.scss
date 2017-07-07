@@ -1,9 +1,7 @@
 @charset "utf-8";
 
-
-// // Import partials.
-// @import
-//   "minima/base",
-//   "minima/layout",
-//   "minima/syntax-highlighting"
-// ;
+@import
+  'dstancu/colors',
+  'dstancu/body',
+  'dstancu/sidebar'
+;
