@@ -1,8 +1,10 @@
 ---
+title: skemata, a JSON-LD DSL
 published: true
 layout: post
 categories: foss
 date: 2017-04-17T19:16:52.000Z
+blurb: Without going into too much detail, a lot of how my employer makes money is related to their SEO rankings. Placing [schema.org dichotomies](https://schema.org/docs/full.html) in your page allows search engines to crawl and recognize data that you are presenting. 
 ---
 ## I made a JSON LD builder thing
 

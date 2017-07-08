@@ -1,6 +1,6 @@
 require('bootstrap-loader');
 require('font-awesome-loader');
-
+require('typeahead');
 
 import clippy from 'clippyjs';
 import * as heros from 'hero-patterns';

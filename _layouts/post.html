@@ -2,11 +2,12 @@
 layout: main_well
 ---
 
-<h2 class="page-header">{{ page.title }}</h2>
+{% include breadcrumbs.html %}
+
+<h1>{{ page.title }}</h1>
 
 <div class="postmeta">
   <span class="label label-default">
-    {% assign date_format = site.minima.date_format | default: "%b %-d, %Y" %}
     {{ page.date | date: date_format }}
   </span>
 
@@ -14,6 +15,7 @@ layout: main_well
     {{ page.categories }}
   </span>
 </div>
+
 
 <br />
 

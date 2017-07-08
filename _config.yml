@@ -1,7 +1,7 @@
 title: David Stancu
 email: dstancu@nyu.edu
 description: > # this means to ignore newlines until "baseurl:"
-  Polyglot software architect and car enthusiast living in New York City.
+  Polyglot software engineer and car enthusiast living in New York City 
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "" # the base hostname & protocol for your site, e.g. http://example.com
 
