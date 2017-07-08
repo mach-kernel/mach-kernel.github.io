@@ -3,7 +3,7 @@ email: dstancu@nyu.edu
 description: > # this means to ignore newlines until "baseurl:"
   Polyglot software engineer and car enthusiast living in New York City 
 baseurl: "" # the subpath of your site, e.g. /blog
-url: "" # the base hostname & protocol for your site, e.g. http://example.com
+url: "https://davidstancu.me" # the base hostname & protocol for your site, e.g. http://example.com
 
 twitter_username: mach_kernel
 github_username:  mach-kernel

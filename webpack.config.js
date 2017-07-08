@@ -28,9 +28,9 @@ module.exports = {
             $: "jquery",
             jQuery: "jquery",
             "window.jQuery": "jquery"
-        }),
-        new webpack.LoaderOptionsPlugin({
-          debug: true
-        })
+        })// ,
+          // new webpack.LoaderOptionsPlugin({
+          //   debug: true
+          // })
     ]
 };

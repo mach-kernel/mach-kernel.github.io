@@ -14,6 +14,7 @@ import Bloodhound from 'bloodhound-js';
 
 
 // Do hero background
+// TODO: needs refactor
 var randomHero = function() {
   var heros = Object.values(this);
 
@@ -28,6 +29,7 @@ $(document).ready(randomHero);
 
 
 // Typeahead
+// TODO: needs sep file
 var initTypeahead = function() {
   var allPosts = $('#all-posts li').map(function(n, li) {
     return Object.assign({},
