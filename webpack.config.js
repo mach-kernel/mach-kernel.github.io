@@ -6,10 +6,10 @@ const webpack = require('webpack');
 const jquery = require('jquery');
 
 module.exports = {
-    entry: ['bootstrap-loader', __dirname + '/_assets/webpack_entry.js'],
+    entry: ['bootstrap-loader', __dirname + '/_assets/bundle.js'],
     output: {
         path:  __dirname + '/_assets/javascripts',
-        filename: 'webpack_bundle.js'
+        filename: 'webpacked_bundle.js'
     },
     module: {
         loaders: [
@@ -28,6 +28,9 @@ module.exports = {
             $: "jquery",
             jQuery: "jquery",
             "window.jQuery": "jquery"
+        }),
+        new webpack.LoaderOptionsPlugin({
+          debug: true
         })
     ]
 };

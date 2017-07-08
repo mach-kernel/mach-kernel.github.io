@@ -7,6 +7,7 @@
   "author": "David Stancu <dstancu@nyu.edu>",
   "license": "MIT",
   "dependencies": {
+    "bloodhound-js": "^1.2.1",
     "bootstrap": "^3.3.7",
     "bootstrap-loader": "^2.1.0",
     "bootstrap-sass": "^3.3.7",
@@ -22,7 +23,7 @@
     "resolve-url-loader": "^2.1.0",
     "sass-loader": "^6.0.6",
     "style-loader": "^0.18.2",
-    "typeahead": "^0.2.2",
+    "typeahead.js": "^0.11.1",
     "url-loader": "^0.5.9",
     "webpack": "^3.1.0"
   }

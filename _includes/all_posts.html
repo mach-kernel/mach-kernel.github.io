@@ -1,5 +1,9 @@
-<ul class="all-posts">
+<ul id="all-posts">
   {% for post in site.posts %}
-    <li title="{{ post.title }}" href="{{ post.url | relative_url }}"></li>
+    <li 
+      title="{{ post.title }}"
+      href="{{ post.url | relative_url }}"
+      blurb="{{post.content | strip_html | truncatewords: 6}}"
+    ></li>
   {% endfor %}
 </ul>

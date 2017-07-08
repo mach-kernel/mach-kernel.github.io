@@ -4,35 +4,12 @@ body {
   font-family: 'Lato', sans-serif;
 }
 
-.all-posts {
-  display: none;
-}
-
 .main-content {
   padding-top: 5%;
   width: 60%;
 
   .home-title {
     margin-top: 5%;
-  }
-}
-
-.footer {
-  background-color: $sidebar;
-  margin-top: 50px;
-  border-radius: 5px;
-  padding: 1px 30px 30px 30px;
-  border: 2px solid $bg-lite;
-
-  .typeahead {
-    font-size: 16pt;
-    height: 45px;
-    width: 350px;
-    padding-left: 40px;
-  }
-  .ta-glass {
-    padding: 15px;
-    position: absolute;
   }
 }
 
