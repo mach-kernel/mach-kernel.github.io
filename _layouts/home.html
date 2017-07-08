@@ -1,0 +1,28 @@
+---
+layout: main_well
+---
+
+{% if site.posts.first %}
+  <h1 class="home-title">{{ site.posts.first.title }}</h2>
+
+  <div class="postmeta">
+    <span class="label label-success">New Post!</span>
+    <span class="label label-default">
+      {{ site.posts.first.date | date: date_format }}
+    </span>
+
+    <span class="label label-info">
+      {{ site.posts.first.categories }}
+    </span>
+  </div>
+
+  <br />
+  
+  <div class="well blurb">
+    {{ site.posts.first.blurb | markdownify }}
+  </div>
+
+  <a class="btn btn-info" href="{{ site.posts.first.url | relative_url }}">
+    Read Post
+  </a>
+{% endif %}

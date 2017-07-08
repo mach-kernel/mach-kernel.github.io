@@ -1,0 +1,54 @@
+body {
+  background-attachment: fixed;
+  background-color: rgba($bg-dark, 0.8);
+  font-family: 'Lato', sans-serif;
+}
+
+.main-content {
+  padding-top: 5%;
+  width: 60%;
+
+  .home-title {
+    margin-top: 5%;
+  }
+}
+
+.main-panel {
+  padding: 1px 30px 30px 30px;
+  background-color: $sidebar;
+  border: 2px solid $bg-lite;
+  border-radius: 5px;
+
+  .panel, .panel-content {
+    -webkit-box-shadow: none;
+    -moz-box-shadow: none;
+    box-shadow: none;
+
+    border: 0px;
+    border-color: transparent;
+    background-color: transparent;
+  }
+
+  .postmeta {
+    span { 
+      margin: 0 5px 0 5px; 
+
+      &:first-child {
+        margin-left: 0px;
+      }
+    }
+  }
+
+  ol.breadcrumb {
+    margin-top: 2%;
+  }
+
+  .blurb {
+    background-color: #FFFFFF;
+    font-style: italic;
+  }
+}
+
+.home-posts-table {
+  margin-top: 50px;
+}
