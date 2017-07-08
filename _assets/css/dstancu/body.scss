@@ -23,6 +23,17 @@ body {
   border-radius: 5px;
   padding: 1px 30px 30px 30px;
   border: 2px solid $bg-lite;
+
+  .typeahead {
+    font-size: 16pt;
+    height: 45px;
+    width: 350px;
+    padding-left: 40px;
+  }
+  .ta-glass {
+    padding: 15px;
+    position: absolute;
+  }
 }
 
 .main-panel {
@@ -53,13 +64,6 @@ body {
 
   ol.breadcrumb {
     margin-top: 2%;
-  }
-
-  .typeahead {
-    text-align: center;
-    font-size: 18pt;
-    height: 45px;
-    width: 350px;
   }
 
   .blurb {

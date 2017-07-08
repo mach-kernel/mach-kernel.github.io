@@ -13463,7 +13463,6 @@ var randomHero = function() {
 }.bind(__WEBPACK_IMPORTED_MODULE_1_hero_patterns__);
 
 $(document).ready(randomHero);
-
 /* WEBPACK VAR INJECTION */}.call(__webpack_exports__, __webpack_require__(2)))
 
 /***/ }),
