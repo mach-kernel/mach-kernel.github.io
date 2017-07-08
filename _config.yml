@@ -21,6 +21,8 @@ assets:
   sources:
     - _assets/css
     - _assets/javascripts
+sass:
+  style: compressed
 exclude:
   - node_modules
 
