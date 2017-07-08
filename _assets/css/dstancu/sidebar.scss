@@ -11,13 +11,13 @@
   background-color: $sidebar;
 
   .avatar-container {
-    display: flex;
     justify-content: center; 
     flex-direction: row;
+    width: 100%;
+    margin-top: -20%;
+    margin-left: 25%;
 
     .avatar {
-      flex-grow: 1;
-      align-self: center;
       max-width: 50%;
       // i.e. a circle
       border-radius: 50%;
