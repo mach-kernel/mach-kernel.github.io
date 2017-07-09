@@ -1,5 +1,5 @@
 ---
-published: false
+published: true
 ---
 ## Building yet another portfolio site
 
@@ -169,4 +169,4 @@ In a template:
 
 ```
 
-That should be it. Make some templates and try them out. 
+That should be it. Make some templates and try them out.
