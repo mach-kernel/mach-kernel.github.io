@@ -23,15 +23,7 @@ Let's make a schema.org object for a book. It doesn't have to be complete.
 
 _Obvious note that you would probably use some kind of repository record not in blog-post land._
 
-```ruby
-require 'skemata'
-
-Skemata.draw :Book, OpenStruct.create(bookEdition: 1, name: 'Foo Book', pages: 42) do
-  bookEdition
-  name
-  pages
-end
-```
+<script src="https://gist.github.com/mach-kernel/5f71dfb2f73e7fad4b8e0cbdb5e1a463.js"></script>
 
 #### Not done yet
 
