@@ -14,6 +14,13 @@ module.exports = {
     module: {
         loaders: [
             {
+              loader: 'babel-loader',
+              include: [
+                path.resolve(__dirname, '_assets/javascripts'),
+              ],
+              test: /\.jsx?$/,
+            },
+            {
               test: /\.(png|woff|woff2|eot|ttf|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
               loader: 'url-loader'
             },
