@@ -6,7 +6,6 @@ categories: foss
 date: 2017-07-09T14:21:37Z
 blurb: If anyone other than this reads my page, they'll know that I rarely have time to make blog entries. Every time I do have something neat to write about, I always feel discouraged by the theme that I'm using because of CSS glitches or ridiculously large background textures (although, this is my fault too). I decided that since I'm still technically on vacation up until today, that I might build my own page. 
 ---
-## Building yet another portfolio site
 
 If anyone other than this reads my page, they'll know that I rarely have time to make blog entries. Every time I do have something neat to write about, I always feel discouraged by the theme that I'm using because of CSS glitches or ridiculously large background textures (although, this is my fault too). I decided that since I'm still technically on vacation up until today, that I might build my own page. 
 
