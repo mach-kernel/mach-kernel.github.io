@@ -164,6 +164,7 @@ Since `webpack` can also import CSS, we don't actually need to care about extern
 In a template:
 
 ```html
+{% raw %}
 <!DOCTYPE html>
 <html lang="{{ page.lang | default: site.lang | default: "en" }}">
   ...
@@ -171,7 +172,7 @@ In a template:
   {% css dstancu %}
   ...
 </html>
-
+{% endraw %}
 ```
 
 That should be it. Make some templates and try them out.
