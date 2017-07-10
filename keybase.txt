@@ -1,0 +1,74 @@
+==================================================================
+https://keybase.io/dstancu
+--------------------------------------------------------------------
+
+I hereby claim:
+
+  * I am an admin of https://davidstancu.me
+  * I am dstancu (https://keybase.io/dstancu) on keybase.
+  * I have a public key with fingerprint 0A77 AE13 92E8 6AE6 75A3  FA57 540F FD17 0200 7D89
+
+To do so, I am signing this object:
+
+{
+    "body": {
+        "key": {
+            "eldest_kid": "010100e4ae2caac56336c8d72f10988a6f3d398b6ff6d7f7394f4255197cca1560bd0a",
+            "fingerprint": "0a77ae1392e86ae675a3fa57540ffd1702007d89",
+            "host": "keybase.io",
+            "key_id": "540ffd1702007d89",
+            "kid": "010100e4ae2caac56336c8d72f10988a6f3d398b6ff6d7f7394f4255197cca1560bd0a",
+            "uid": "6f8a97e9d1930ed6bde52d350782a719",
+            "username": "dstancu"
+        },
+        "revoke": {
+            "sig_ids": [
+                "c36b48c8d05baf820a2b4bdad7e8cb33dd6cab14be6984b6575e32d2030ed4a20f"
+            ]
+        },
+        "service": {
+            "hostname": "davidstancu.me",
+            "protocol": "https:"
+        },
+        "type": "web_service_binding",
+        "version": 1
+    },
+    "ctime": 1499696394,
+    "expire_in": 157680000,
+    "prev": "c7de3689092081db9e9466dfda245011008e805cc17448cafdad351973b573d1",
+    "seqno": 16,
+    "tag": "signature"
+}
+
+which yields the signature:
+
+-----BEGIN PGP MESSAGE-----
+Version: Keybase OpenPGP v2.0.72
+Comment: https://keybase.io/crypto
+
+yMJrAnicrVJbaBVHGD5JaoKnRuJbH0pbB4kNHGVmZ3cup2qJTWxVqghiozUc57Zx
+jd09ObvnNDGmsVWkSIuCl4dUvASktCJEC4pRqmlKSkhpRYpFH4yFVqx9KEQKrRd0
+NuhbH515GOaf7/++b76Z7+trMtmqlbeSewea5w5UTYz8U86sV59ne4GMdA/I94JO
+M72YrdrESaEz0CAPILITGlcYRwmhPIIxUUxTx0eQMyaIjzXmTBLfJ5r6FHPXdx3P
+Q5wqJZBHoNRQgBzwg7DDlIqlIExSWkGpMAhzxzAiDKGewL7wqOdC39eIQgdCqhm3
+jZujOO2w5qSIzcIgsjW7KUzb+x/8c/ZdnqYjPhOcGq4Rx9BoIrXxHI09SJkjKEp1
+y7EpheIDY9E6TkSoyqAvB0qmEnWaNNY46LCeY5B/HyhMpMusHehJ4TMHCke6UgtN
+DVMSY62JEhK50hDOXElsLgY72oGptisc6IN2y20FK4GaJk9DeiYuKsFTAwttIQeK
+pSiJVLTVnm1OkmKcT30lPcUU/KGRhac0BRmE2j6S7aiYUhxEIcgji1RJkPIil3PC
+ic0pB0x3MSiZQpAiPEoYtCPVMRVLqag2mDAOuQMZ0pIb7hKifS0c14PIvgozDHpK
+IeraEIQ9sEHa3LH0KNYIpBfrCiPLTaxP0WE5bXahSMolA/q+u7zxhUxVNlM7ozr9
+vZnszIZnf3r+UN396ktTyx6catJXZ499faLScua3Qz+dWv3iosaz24P6id9PNNZd
+jJv9w4+uDF28Odn55o1zi5Zl4NovQXPD+f7+utVR7ldvuPLz2KVWtKd18pOWvbt3
+/3jrl/am0bZ37x7fVTuw5Hy3PpPZd2+QPNz/9qEbm9p08M1/y3eCVydfHnvcO+OH
+WSONX/S3XpsYOPiHt+rcZ3vmXVtn/t5y/cF91XB2ZrKr7fTs0eHgja47x3u6P92y
+YMfY7TlHh0+/dHj/1IavXtl25MCVxgv5/JHXxjMtfeM1H9ePLq6uCW+eRK9fXb7m
+vXb5uPbP7hF/wdS/ekXV0LfZv3jXWx8tXTV+zF3xzvbxpusDd/Fgw+AT2Ipbmw==
+=JAMC
+-----END PGP MESSAGE-----
+
+And finally, I am proving ownership of this host by posting or
+appending to this document.
+
+View my publicly-auditable identity here: https://keybase.io/dstancu
+
+==================================================================
