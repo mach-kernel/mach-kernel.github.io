@@ -3,20 +3,4 @@ layout: main_well
 ---
 
 {% include breadcrumbs.html %}
-
-<h1>{{ page.title }}</h1>
-
-<div class="postmeta">
-  <span class="label label-default">
-    {{ page.date | date: date_format }}
-  </span>
-
-  <span class="label label-info">
-    {{ page.categories }}
-  </span>
-</div>
-
-
-<br />
-
-{{ content }}
+{% include single_post.html post = page %}

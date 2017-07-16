@@ -1,0 +1,20 @@
+{% if include.breadcrumbs %}
+  {% include breadcrumbs.html %}
+{% endif %}
+
+<h1>{{ include.post.title }}</h1>
+
+<div class="postmeta">
+  <span class="label label-default">
+    {{ include.post.date | date: date_format }}
+  </span>
+
+  <span class="label label-info">
+    {{ include.post.categories }}
+  </span>
+</div>
+
+
+<br />
+
+{{ include.post.content }}
