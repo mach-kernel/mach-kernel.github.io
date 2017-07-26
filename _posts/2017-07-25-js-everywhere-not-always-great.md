@@ -37,7 +37,7 @@ steps:
         heroku container:push worker -a talkbirdy-myna;
 ```
 
-Now, before I can get this working, I need to install the [Heroku CLI tool](https://devcenter.heroku.com/articles/heroku-cli#standalone). Of course there's a Debian/Ubuntu `apt-get` sugar way into this that I can't use, but at this point it's just me being bitter about not having nice things. Since it seems that the only other way to get this thing running is to install a full Node.JS distribution. The actors that depend upon `pocketsphinx` are not a Rails app, so they do not need an ExecJS runtime, nor does anything else in that container. In short: woooooo! No node!
+Now, before I can get this working, I need to install the [Heroku CLI tool](https://devcenter.heroku.com/articles/heroku-cli#standalone). Of course there's a Debian/Ubuntu `apt-get` sugar way into this that I can't use, but at this point it's just me being bitter about not having nice things. We opt for the manual install option, since it seems that the only other way to get this thing running is to install a full Node.JS distribution. The actors that depend upon `pocketsphinx` are not a Rails app, so they do not need an ExecJS runtime, nor does anything else in that container. In short: woooooo! No node!
 
 ### Actually, yes Node
 
