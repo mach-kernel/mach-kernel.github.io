@@ -75,4 +75,4 @@ RUN rm -rf /usr/local/lib/heroku/bin/node
 RUN ln -s /usr/local/bin/node /usr/local/lib/heroku/bin/node
 ```
 
-Since when did our desire to use cool new tools outweigh the _their entire fucking purpose as tools_? Apparently, for me, today. 
+Since when did our desire to use cool new tools outweigh the _their entire fucking purpose as tools_? This is something people depend on! And at this point, I didn't even start building `libsphinx`. At least we're _webscale_ now, though.
