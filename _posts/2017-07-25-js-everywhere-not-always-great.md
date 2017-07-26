@@ -2,7 +2,7 @@
 title: A VCS push that requires Node.JS, because 2017
 published: true
 layout: post
-categories: foss, heroku, docker, nodejs
+categories: PaaS
 date: 2017-07-26T20:02:09Z
 ---
 
@@ -50,7 +50,7 @@ Installing the CLI tool however has taught me differently. Let's fast forward to
 
 No way. I've used `tar` a lot and generally consider myself to not be an idiot. I was right about one thing, but it was the former. Listing through the directories shows that the tarball we downloaded from Heroku is an 800kb or so CLI tool, bundled with a ~40mb `node` binary. Why won't it work? Alpine does not use `glibc` and uses [musl](https://www.musl-libc.org/faq.html) instead. To make another excruciatingly long story short, `musl` is built using slightly more modern software practices that try to account for security holes and size -- but everybody uses `glibc`. You won't get your awesome nVidia drivers to build against `musl`, and since everybody uses `glibc` Heroku just gave us that variant. No note on their website, nothing. `musl` and `glibc` are for the most part **not** easy swap-outs for one another (although this is the goal), especially when building something as insane as V8. 
 
-### What now
+### What now?
 
 I don't remember being this angry in a long time. At any rate, no big deal, we can just use [Alpine's version of node](https://pkgs.alpinelinux.org/package/edge/main/x86_64/nodejs). After installing and rebuilding the container, `heroku-cli` greets me with its presence, only to inform me that I'm not using `node > 8.x` and that I should likely proceed with fucking myself. Apparently Heroku believes that a bunch of REST bindings need bleeding edge JavaScript optimizations, because you obviously know some product guy put up 30 user post-its in an attempt to empathize with _me_. At this point, out of desparation, I go to Docker Hub to see if there are any `alpine` based images with Heroku CLI. I notice [this guy's attempt](https://hub.docker.com/r/wingrunr21/alpine-heroku-cli/), which involves building it from source. Wondering if he too broke everything within arms reach in a fit of rage, I assemble my final container image:
 
