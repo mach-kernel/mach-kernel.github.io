@@ -6,7 +6,7 @@ categories: PaaS
 date: 2017-10-13T23:48:53.000Z
 ---
 
-I haven't been writing a lot lately. I've been really busy doing some cool things behind the scenes over at [Catalyst](https://getcatalyst.io). Today I'm going to share some things that I learned the past month that might be a good fit both fledgling software teams and more mature cross-functional digs. 
+I haven't been writing a lot lately. I've been really busy doing some cool things behind the scenes over at [Catalyst](https://getcatalyst.io). Today I'm going to share some things that I learned the past month that might be a good fit for both fledgling software teams and more mature cross-functional digs. 
 
 ### Well?
 
