@@ -9,7 +9,7 @@
   "dependencies": {
     "babel-register": "^6.24.1",
     "bloodhound-js": "^1.2.1",
-    "bootstrap": "^3.3.7",
+    "bootstrap": "^3.4.1",
     "bootstrap-loader": "^2.1.0",
     "bootstrap-sass": "^3.3.7",
     "clippyjs": "^0.0.3",
