@@ -11,7 +11,7 @@
     "bloodhound-js": "^1.2.1",
     "bootstrap": "^3.3.7",
     "bootstrap-loader": "^2.1.0",
-    "bootstrap-sass": "^3.3.7",
+    "bootstrap-sass": "^3.4.1",
     "clippyjs": "^0.0.3",
     "css-loader": "^0.28.4",
     "exports-loader": "^0.6.4",
