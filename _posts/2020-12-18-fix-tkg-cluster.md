@@ -46,7 +46,7 @@ udp        0      0 10.0.5.155:68           0.0.0.0:*                           
 
 No `kubelet` on 6443. How about the logs?
 
-![](https://i.imgur.com/u23cCSC.png)
+![](https://i.imgur.com/u23cCSCl.png)
 
 
 The TKG nodes don't use Docker, but [containerd](https://containerd.io/) as their CRI directly. Digging in:
