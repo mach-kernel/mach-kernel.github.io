@@ -2,13 +2,11 @@
 title: skemata, a JSON-LD DSL
 published: true
 layout: post
-categories: foss
+categories: seo schema-org
 date: 2017-04-17T19:16:52.000Z
-blurb: Without going into too much detail, a lot of how my employer makes money is related to their SEO rankings. Placing [schema.org dichotomies](https://schema.org/docs/full.html) in your page allows search engines to crawl and recognize data that you are presenting. 
 ---
-## I made a JSON LD builder thing
 
-Without going into too much detail, a lot of how my employer makes money is related to their SEO rankings. Placing [schema.org dichotomies](https://schema.org/docs/full.html) in your page allows search engines to crawl and recognize data that you are presenting. For example, [this credit card review](https://www.mybanktracker.com/credit-cards/expert-reviews/fidelity-rewards-visa-signature-card-review-254403) on our site can now be understood by Google, so our search engine listings display as...
+Placing [schema.org dichotomies](https://schema.org/docs/full.html) in your page allows search engines to crawl and recognize data that you are presenting. For example, [this credit card review](https://www.mybanktracker.com/credit-cards/expert-reviews/fidelity-rewards-visa-signature-card-review-254403) on our site can now be understood by Google, so our search engine listings display as...
 
 ![Screen Shot 2017-04-17 at 14.53.50.png]({{site.baseurl}}/_posts/Screen Shot 2017-04-17 at 14.53.50.png)
 

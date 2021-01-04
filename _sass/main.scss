@@ -1,0 +1,46 @@
+@import '_colors';
+@import '_fonts';
+@import 'pygments-colorful.scss';
+
+body {
+  background: $dstancu-bg;
+  font-family: 'Open Sans', sans-serif;
+}
+
+.dstancu {
+  &-container {
+    margin: auto;
+    width: 40em;
+    overflow-x: hidden;
+  }
+
+  &-header {
+    font-family: 'Ubuntu Mono', monospace;
+
+    .title {
+      font-size: 3rem;
+      color: $dstancu-accent;
+      white-space: nowrap;
+    }
+
+    .links {
+      color: $dstancu-gold;
+      font-weight: bold;
+    }
+  }
+}
+
+@media (max-width: 60em) {
+  .dstancu {
+    &-container {
+      padding: 20px;
+      width: 100%;
+    }
+
+    &-header {
+      .links {
+        margin-top: 2em;
+      }
+    }
+  }
+}

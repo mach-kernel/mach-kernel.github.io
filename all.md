@@ -1,4 +1,4 @@
 ---
 layout: index
-title: home
+title: all posts
 ---

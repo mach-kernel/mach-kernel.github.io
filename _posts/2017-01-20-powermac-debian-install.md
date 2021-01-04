@@ -2,7 +2,7 @@
 published: true
 layout: post
 title: 'G4 MDD: Debian Sid!'
-categories: retrolust
+categories: apple retro
 date: 2017-01-21T01:16:22.000Z
 ---
 I'm installing Debian on my FW 800 MDD PowerMac G4, and I'm going to talk about it here so you too can convince yourself that your Friday night, is in fact, probably better. 
@@ -19,7 +19,7 @@ I'm installing Debian on my FW 800 MDD PowerMac G4, and I'm going to talk about 
         
 ## Booting
 
-"I'm not an idiot, if this thing can boot from USB, it'll take me like two seconds get started" I said before eating shit and spending the greater part of 30 minutes getting the machine to start. 
+"I'm not a dummy, if this thing can boot from USB, it'll take me like two seconds get started" I said before eating my words and spending the greater part of 30 minutes getting the machine to start. 
 
 - Print out your entire device tree with `dev / ls` 
 	- Identify your USB disk. There should be a USB hub that has something similar to `disk@1`. Be patient. There is a lot of text!

@@ -2,11 +2,9 @@
 title: Breaking your TKG cluster is easier than fixing it
 published: true
 layout: post
-categories: homelab
+categories: homelab vmware
 date: 2020-12-11T19:29:30-05:00
 ---
-
-### Actually, much easier
 
 Newer versions of ESXI (6.7U3+) can run [VMware's Tanzu Kubernetes Grid](https://tanzu.vmware.com/kubernetes-grid). I don't run ESXI HA at home, so unfortunately I don't get to take advantage of some shiny features, but it does some important stuff which is why it's the K8S I run at home:
 

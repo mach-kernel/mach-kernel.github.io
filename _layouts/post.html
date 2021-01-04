@@ -1,6 +1,10 @@
 ---
-layout: main_well
+layout: default
 ---
 
-{% include breadcrumbs.html %}
-{% include single_post.html post = page %}
+<div class="dstancu-post">
+  <span class="f3 b">{{ page.title }}</span>
+  <div class="f5 lh-copy">
+    {{ content }}
+  </div>
+</div>
