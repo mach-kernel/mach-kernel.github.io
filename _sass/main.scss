@@ -30,16 +30,31 @@ body {
   }
 }
 
-@media (max-width: 60em) {
+@media (max-width: 40em) {
   .dstancu {
     &-container {
-      padding: 20px;
+      padding: 0 20px 20px 20px;
       width: 100%;
     }
+  }
+}
 
+@media (max-width: 36em) {
+  .dstancu {
     &-header {
+      .ds-heading {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
       .links {
-        margin-top: 2em;
+        margin-top: 1em;
+        flex-direction: column-reverse;
+        align-items: flex-start;
+      }
+
+      .nav {
+        margin-top: 1em;
       }
     }
   }

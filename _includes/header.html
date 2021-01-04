@@ -1,27 +1,27 @@
 <header class="dstancu-header pt2 pb2">
-  <div class="flex-l flex-m justify-between items-center">
+  <div class="flex-l flex-m justify-between items-center ds-heading">
     <span class="title">
       dstancu@web $
     </span>
-    <div class="contact">
+    <div class="contact pl1">
       <span>PGP: 540FFD1702007D89</span>
       <br />
       <span>dstancu [at] nyu [dot] edu</span>
     </div>
   </div>
   <div class="flex justify-between items-center links">
-    <div>
+    <div class="nav">
       {% if page.url == '/' %}
       <a class="link ds-gold hover-light-purple underline" href="/">[home]</a>
       {% else %}
       <a class="link ds-gold hover-light-purple" href="/">[home]</a>
       {% endif %}
 
-      {% if page.url == '/all.html' %}
+      <!-- {% if page.url == '/all.html' %}
       <a class="link ds-gold hover-light-purple underline" href="/all">[all]</a>
       {% else %}
       <a class="link ds-gold hover-light-purple" href="/all">[all]</a>
-      {% endif %}
+      {% endif %} -->
       
       {% if page.url != '/' %}
         <span class="black">{{ page.id }}</span>
