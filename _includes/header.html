@@ -16,6 +16,12 @@
       {% else %}
       <a class="link ds-gold hover-light-purple" href="/">[home]</a>
       {% endif %}
+
+      {% if page.url == '/all.html' %}
+      <a class="link ds-gold hover-light-purple underline" href="/all">[all]</a>
+      {% else %}
+      <a class="link ds-gold hover-light-purple" href="/all">[all]</a>
+      {% endif %}
       
       {% if page.url != '/' %}
         <span class="black">{{ page.id }}</span>

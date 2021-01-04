@@ -1,4 +1,4 @@
 ---
-layout: index
+layout: all
 title: all posts
 ---
