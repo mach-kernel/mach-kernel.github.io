@@ -1,5 +1,5 @@
 ---
-title: Breaking API change, except in C apparently
+title: Breaking API change
 published: true
 layout: post
 categories: foss pocketsphinx

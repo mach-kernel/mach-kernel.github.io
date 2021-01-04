@@ -1,0 +1,21 @@
+---
+layout: default
+---
+
+<div class="posts">
+  {% for post in site.posts %}
+
+  <div class="post-preview mb5">
+    <div class="f3 mb1">
+      <a class="link dark-blue hover-light-purple" href="{{ post.url }}">{{ post.title }}</a>
+    </div>
+    {{ post.date }}
+    <div class="fu-mono ds-gold mt2 f5">{{ post.categories | join: ', ' }}</div>
+    <div class="f6 lh-copy">
+      {{ post.content | truncatewords: 50 }}
+    </div>
+    
+  </div>
+  {% endfor %}
+</div>
+
