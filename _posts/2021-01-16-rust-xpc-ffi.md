@@ -1,8 +1,8 @@
 ---
-title: "A convoluted Hello World involving Rust, FFI, and Apple launchd"
+title: "A convoluted Hello World involving Rust, FFI, and Apple launchd?!"
 published: true
 layout: post
-categories: retrocomputing
+categories: macos rust
 date: 2021-01-02T21:47:44-05:00
 ---
 
@@ -107,9 +107,17 @@ PS: The APIs do work for unsanctioned purposes, but that would ruin the fun we'r
 #### How does launchctl do it now?
 
 [Refer to this comprehensive XPC overview](https://www.objc.io/issues/14-mac/xpc)
+
 [Apple official XPC developer documentation](https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/CreatingXPCServices.html#//apple_ref/doc/uid/10000172i-SW6-SW1)
 
-This is probably cheating and reading the docs is better, but install radare2 and go spelunking:
+Before starting, if you want to follow along you'll probably need to disable SIP. Otherwise, you won't be able to debug the `launchctl` binary due to Apple's [new hardened runtime requirements](https://lapcatsoftware.com/articles/debugging-mojave.html) and will be greeted by this in the console:
+
+```
+error: MachTask::TaskPortForProcessID task_for_pid failed: ::task_for_pid ( target_tport = 0x0103, pid = 66905, &task ) => err = 0x00000005 ((os/kern) failure)
+macOSTaskPolicy: (com.apple.debugserver) may not get the taskport of (launchctl) (pid: 66905): (launchctl) is hardened, (launchctl) doesn't have get-task-allow, (com.apple.debugserver) is a declared debugger
+```
+
+Now that we're moving on, it's time to admit this is probably cheating and reading the docs is better, but install radare2 and go spelunking:
 
 ```
 $ r2 ./launchctl
@@ -135,35 +143,62 @@ $ r2 ./launchctl
 0x10000e0c0    1 6            sym.imp.xpc_string_get_string_ptr
 ```
 
-I've omitted a bunch of functions, but the idea looks to be the same. The majority of these helpers provide an API for building XPC data and then somehow a message is sent. Truth is, I tried [the method outlined here](http://newosxbook.com/articles/jlaunchctl.html) re logging the XPC messages:
+I've omitted a bunch of functions, but the idea looks to be the same. The majority of these helpers provide an API for building XPC data and then somehow a message is sent. Truth is, I tried [the method outlined here](http://newosxbook.com/articles/jlaunchctl.html) re logging the XPC messages but was not able to get it working:
 
->You'll see that I have #if 0 blocks showing the Mach messages used in each of the launchctl requests. You are encouraged to get to them yourself, and it's quite easy to reproduce:
->
->   Start launchctl with no arguments under lldb
->   Set a breakpoint on xpc_pipe_routine
->   Run with whatever request argument you want to test
->   When the breakpoint hits, set another breakpoint on mach_msg
->   continue on the first two hits of mach_msg - these are the setup messages of the XPC pipe
->   mem read $rdi to see the content of the third message. You'll see something like: 
+>Start launchctl with no arguments under lldb
+>Set a breakpoint on xpc_pipe_routine
+>Run with whatever request argument you want to test
+>When the breakpoint hits, set another breakpoint on mach_msg
+>continue on the first two hits of mach_msg - these are the setup messages of the XPC pipe
+>mem read $rdi to see the content of the third message
 
-`xpc_pipe_routine` is responsible for TODO. I was able to set this breakpoint but it never hooked. Looking at the output above, it seems that on Big Sur this is now `xpc_pipe_routine_with_flags`. Trying that again:
+`xpc_pipe_routine` (see pg. 11 [here](http://newosxbook.com/files/HITSB.pdf)) appears to be the boundary through which XPC messages pass. I'm sure security researchers can explain it better. I unfortunately was not able to break at `xpc_pipe_routine`. Looking at functions in radare, there appears to be no symbol for `xpc_pipe_routine` -- only for  `xpc_pipe_routine_with_flags` -- which seems to explain what I observed. Trying that again:
 
 ```
 $ lldb launchctl
 (lldb) b xpc_pipe_routine_with_flags
-Breakpoint 2: where = libxpc.dylib`xpc_pipe_routine_with_flags, address = 0x00007fff2008d841
+Breakpoint 1: where = libxpc.dylib`xpc_pipe_routine_with_flags, address = 0x00007fff2008d841
 (lldb) run list com.apple.Spotlight
 Process 77861 launched: '/bin/launchctl' (x86_64)
-1 location added to breakpoint 2
-Process 77861 stopped
-* thread #1, queue = 'com.apple.main-thread', stop reason = breakpoint 2.2
+* thread #1, queue = 'com.apple.main-thread', stop reason = breakpoint 1.4
     frame #0: 0x00007fff2008d841 libxpc.dylib`xpc_pipe_routine_with_flags
+
+### a bunch of continues, for messages going to com.apple.logd and others ### 
+
 libxpc.dylib`xpc_pipe_routine_with_flags:
 ->  0x7fff2008d841 <+0>: pushq  %rbp
     0x7fff2008d842 <+1>: movq   %rsp, %rbp
     0x7fff2008d845 <+4>: pushq  %r15
     0x7fff2008d847 <+6>: pushq  %r14
+(lldb) p (char *) xpc_copy_description($rsi)
+(char *) $8 = 0x0000000100205af0 "<dictionary: 0x1006040c0> { count = 7, transaction: 0, voucher = 0x0, contents =\n\t\"subsystem\" => <uint64: 0xc2e26cce006963a7>: 3\n\t\"handle\" => <uint64: 0xc2e26cce006953a7>: 0\n\t\"routine\" => <uint64: 0xc2e26cce005ba3a7>: 815\n\t\"name\" => <string: 0x1006046d0> { length = 19, contents = \"com.apple.Spotlight\" }\n\t\"type\" => <uint64: 0xc2e26cce006923a7>: 7\n\t\"legacy\" => <bool: 0x7fff800410b0>: true\n\t\"domain-port\" => <mach send right: 0x100604530> { name = 1799, right = send, urefs = 5 }\n}
 ```
+
+[Thanks to this post](https://geosn0w.github.io/A-Long-Evening-With-macOS%27s-Sandbox/) for the `xpc_copy_description` trick! `fr v` shows nothing, so we can't easily see local frame variables. x86_64 [calling convention](https://github.com/cirosantilli/x86-assembly-cheat/blob/master/x86-64/calling-convention.md) stipulates (at least on *nix machines) that the first 6 arguments are loaded the registers (in order): `%rdi %rsi %rdx %rcx %r8 %r9` (if there are more, they go on the stack). `lldb` is also awesome and shows us the pointer types:
+
+```
+(lldb) p (void *) $rdi
+(OS_xpc_pipe *) $14 = 0x00000001002054b0
+(lldb) p (void *) $rsi
+(OS_xpc_dictionary *) $15 = 0x00000001006040c0
+```
+
+`OS_xpc_dictionary` is referenced in [Apple's official xpc.h objc docs](https://developer.apple.com/documentation/xpc/xpc_services_xpc_h?language=objc)! This is a list of functions that we can call from the debugger!! It sounds like `$rsi` could be an `xpc_object_t`:
+
+```
+# https://developer.apple.com/documentation/xpc/xpc_object_t?language=objc
+xpc_type_t xpc_get_type(xpc_object_t object);
+
+# void* since it is a pointer
+(lldb) p (void *) xpc_get_type($rsi)
+(OS_xpc_dictionary *) $20 = 0x00007fff889b3bf0
+```
+
+#### Decoding the XPC Messages
+
+
+#### Rust piece
+
 
 ```
 $ echo 'int main(int argc, char**argv) { printf("Hello world!\\n"); return 0; }' | clang -o testbin -v -xc -
@@ -183,29 +218,3 @@ $ otool -L $(which launchctl)
 ```
 
 `libbsm` has to do with [OpenBSM support since 10.6x](https://derflounder.wordpress.com/2012/01/30/openbsm-auditing-on-mac-os-x/), and `libobjc` is the [objc runtime](https://developer.apple.com/documentation/objectivec/objective-c_runtime). Communication between `launchctl` and `launchd` is likely using an IPC API available in `libSystem`.
-
-Naively, I thought we can maybe get more info by poking around:
-
-```
-$ lldb $(which launchctl)
-(lldb) target create "/bin/launchctl"
-Current executable set to '/bin/launchctl' (x86_64).
-(lldb) run list
-error: process exited with status -1 (attach failed (Not allowed to attach to process.  Look in the console messages (Console.app), near the debugserver entries when the attached failed.  The subsystem that denied the attach permission will likely have logged an informative message about why it was denied.))
-```
-
-Console events for `com.apple.dt.lldb`:
-
-```
-error: MachTask::TaskPortForProcessID task_for_pid failed: ::task_for_pid ( target_tport = 0x0103, pid = 66905, &task ) => err = 0x00000005 ((os/kern) failure)
-macOSTaskPolicy: (com.apple.debugserver) may not get the taskport of (launchctl) (pid: 66905): (launchctl) is hardened, (launchctl) doesn't have get-task-allow, (com.apple.debugserver) is a declared debugger
-```
-
-Hardened runtime was introduced in 10.13.6. According to [this article about debugging on Mojave](https://lapcatsoftware.com/articles/debugging-mojave.html):
-
->What happens on Mojave if you try to debug an app compiled with the hardened runtime? If System Integrity Protection is disabled, then nothing changes; it's the same as I described in the first section of this blog post. So the hardened runtime is enforced by SIP. With SIP enabled, you can still debug your app if it's compiled with the com.apple.security.get-task-allow entitlement. If an app doesn't have that entitlement, however, then you can't debug it at all.
-
-`dtruss` doesn't show anything interesting ([trace here](https://gist.github.com/mach-kernel/047b0bb51d66fca83ffdcbe07ca93eb0)). If all you get are probe errors, then you [likely have to run](https://stackoverflow.com/a/36760408) `csrutil enable --without dtrace` from your recovery partition. Bummer. It seems that disabling SIP is the only way. But it finally lets us debug the launchctl binary with `lldb`:
-
-#### How does launchctl do it?
-
