@@ -2,7 +2,7 @@
 title: "A convoluted Hello World involving Rust, FFI, and Apple launchd?!"
 published: true
 layout: post
-categories: macos rust
+categories: macos rust ffi
 date: 2021-01-02T21:47:44-05:00
 ---
 
@@ -146,7 +146,7 @@ $ r2 ./launchctl
 0x10000e0c0    1 6            sym.imp.xpc_string_get_string_ptr
 ```
 
-I've omitted a bunch of functions, but the idea looks to be the same. The majority of these helpers provide an API for building XPC data and send/recv messages. Truth is, I tried [the method outlined here](http://newosxbook.com/articles/jlaunchctl.html) re logging the XPC messages but was not able to get it working:
+I've omitted a bunch of functions for sake of readability, but the idea looks to be the same. The majority of these helpers provide an API for building XPC data and send/recv messages. Truth is, I tried [the method outlined here](http://newosxbook.com/articles/jlaunchctl.html) re logging the XPC messages but was not able to get it working:
 
 >Start launchctl with no arguments under lldb
 >Set a breakpoint on xpc_pipe_routine
@@ -174,84 +174,103 @@ libxpc.dylib`xpc_pipe_routine_with_flags:
     0x7fff2008d842 <+1>: movq   %rsp, %rbp
     0x7fff2008d845 <+4>: pushq  %r15
     0x7fff2008d847 <+6>: pushq  %r14
-(lldb) p (char *) xpc_copy_description($rsi)
-(char *) $8 = 0x0000000100205af0 "<dictionary: 0x1006040c0> { count = 7, transaction: 0, voucher = 0x0, contents =\n\t\"subsystem\" => <uint64: 0xc2e26cce006963a7>: 3\n\t\"handle\" => <uint64: 0xc2e26cce006953a7>: 0\n\t\"routine\" => <uint64: 0xc2e26cce005ba3a7>: 815\n\t\"name\" => <string: 0x1006046d0> { length = 19, contents = \"com.apple.Spotlight\" }\n\t\"type\" => <uint64: 0xc2e26cce006923a7>: 7\n\t\"legacy\" => <bool: 0x7fff800410b0>: true\n\t\"domain-port\" => <mach send right: 0x100604530> { name = 1799, right = send, urefs = 5 }\n}
-```
-
-[Thanks to this post](https://geosn0w.github.io/A-Long-Evening-With-macOS%27s-Sandbox/) for the `xpc_copy_description` trick! `fr v` shows nothing, so we can't easily see local frame variables. x86_64 [calling convention](https://github.com/cirosantilli/x86-assembly-cheat/blob/master/x86-64/calling-convention.md) stipulates that the first 6 arguments are loaded the registers (in order): `%rdi %rsi %rdx %rcx %r8 %r9` (if there are more, they go on the stack). Going through the argument list, `lldb` even shows us what kind of pointers we have:
-
-```
 (lldb) p (void *) $rdi
 (OS_xpc_pipe *) $14 = 0x00000001002054b0
 (lldb) p (void *) $rsi
 (OS_xpc_dictionary *) $15 = 0x00000001006040c0
 ```
 
-`OS_xpc_dictionary` is referenced in [Apple's official xpc.h objc docs](https://developer.apple.com/documentation/xpc/xpc_services_xpc_h?language=objc)! We can all all of these from the debugger!! Speaking of, it sounds like `$rsi` could be an `xpc_object_t`:
+`fr v` shows nothing, so we can't easily see local frame variables. x86_64 [calling convention](https://github.com/cirosantilli/x86-assembly-cheat/blob/master/x86-64/calling-convention.md) stipulates that the first 6 arguments are loaded the registers (in order): `%rdi %rsi %rdx %rcx %r8 %r9` (if there are more, they go on the stack). Going through the argument list, `lldb` shows us pointer types which are likely `xpc_pipe_t` and [`xpc_object_t` dictionary](https://developer.apple.com/documentation/xpc/xpc_object_t?language=objc).
 
+[Thanks to this post](https://geosn0w.github.io/A-Long-Evening-With-macOS%27s-Sandbox/) for the `xpc_copy_description` trick! We are now looking at the contents of the XPC dictionary:
 ```
-# https://developer.apple.com/documentation/xpc/xpc_object_t?language=objc
-xpc_type_t xpc_get_type(xpc_object_t object);
+(lldb) 	
+}<dictionary: 0x1005044e0> { count = 7, transaction: 0, voucher = 0x0, contents =
+	"subsystem" => <uint64: 0x4bf4eb077acd526d>: 3
+	"handle" => <uint64: 0x4bf4eb077acd626d>: 0
+	"routine" => <uint64: 0x4bf4eb077aff926d>: 815
+	"name" => <string: 0x100504590> { length = 19, contents = "com.apple.Spotlight" }
+	"type" => <uint64: 0x4bf4eb077acd126d>: 7
+	"legacy" => <bool: 0x7fff800410b0>: true
+	"domain-port" => <mach send right: 0x100504100> { name = 1799, right = send, urefs = 5 }
+```
 
-(lldb) p (void *) xpc_get_type($rsi)
-(OS_xpc_dictionary *) $20 = 0x00007fff889b3bf0
-(lldb) p *((OS_xpc_dictionary *) $rsi)
-(OS_xpc_dictionary) $30 = {
-  OS_xpc_object = {
-    OS_object = {
-      NSObject = (isa = OS_xpc_dictionary)
-    }
-  }
+In addition, we can access any xpc header function [documented here](https://developer.apple.com/documentation/xpc/1505740-xpc_main?language=objc) from this breakpoint.
+
+[This presentation](https://saelo.github.io/presentations/bits_of_launchd.pdf) explains`launchd` messages have fields that work kind of like syscalls, where you give it a number that corresponds to the routine for some desired effect:
+
+| Key       | Desc                                                       |
+|-----------|------------------------------------------------------------|
+| type      | [int] Domain type (see below)                              |
+| handle    | ???   Handle to ???                                        |
+| subsystem | [int] Function that should handle request                  |
+| routine   | [int] Routine (sub-fn) that should handle request          |
+| name      | [string]                                                   |
+| flags     | ???                                                        |
+
+| Domain | Desc                     |
+|---|-------------------------------|
+| 1 | System (1 instance / system)  |
+| 2 | User (1 / login)              |
+| 3 | User-login (1 / login)        |
+| 4 | Session (???)                 |
+| 5 | PID (1 / process)             |
+| 6 | User domain for requestor UID |
+| 7 | Requestor domain              |
+
+In theory we should be able to copy this message, send it, then wait for an XPC response with information about `com.apple.Spotlight` as demo'd at the start of the post. It's finally time for the Rust part!
+
+#### Hello world from Rust
+
+From the docs, our workflow should look something like this:
+
+- [`dispatch_queue_create`](https://developer.apple.com/documentation/dispatch/1453030-dispatch_queue_create?language=occ) to make a new queue for our event handler to consume.
+- [`xpc_connection_create_mach_service`](https://developer.apple.com/documentation/xpc/xpc_connection_mach_service_privileged?language=objc) to register a Mach service and our new queue.
+- [`xpc_connection_set_event_handler`](https://developer.apple.com/documentation/xpc/1448805-xpc_connection_set_event_handler?language=objc) to bind an Objective-C block you want to invoke for every message
+
+##### FFI Plumbing
+
+[bindgen](https://rust-lang.github.io/rust-bindgen/) can take C headers and generate Rust bindings. According to the manual (and a friend), the bindings should best go in their own crate. Our project setup is going to be a Rust workspace with two packages: `launchk` and `xpc-bindgen`.
+
+The docs recommend making a `wrapper.h` file that imports the desired headers (which are then used by bindgen). Crate [xcrun](https://crates.io/crates/xcrun) has some nice sugar for getting macOS SDK paths, so instead we can reference `xpc.h` directly in our `build.rs`:
+
+```rust
+static MACOS_INCLUDE_PATH: &str = "/usr/include";
+
+fn main() {
+    let sdk_path = xcrun::find_sdk(SDK::macOS(None))
+        .and_then(|pb| pb.to_str().map(String::from))
+        .and_then(|p| p.strip_suffix("\n").map(String::from))
+        .expect("macOS SDK Required");
+
+    let xpc_path = format!("{}{}/xpc/xpc.h", sdk_path, MACOS_INCLUDE_PATH);
+
+    let bindings = bindgen::Builder::default()
+        .header(xpc_path)
+        .parse_callbacks(Box::new(bindgen::CargoCallbacks))
+        .generate()
+        .expect("Unable to generate bindings");
+    let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
+    bindings
+        .write_to_file(out_path.join("bindings.rs"))
+        .expect("Couldn't write bindings!");
 }
 ```
 
-Looks like yes! Now let's use [`xpc_dictionary_apply`](https://developer.apple.com/documentation/xpc/1505404-xpc_dictionary_apply?language=objc). The carat defines an Objective-C block called for each k/v iteration. You'll notice two weird things: `void*` in the block really has type `xpc_object_t`, but lldb can't resolve it. Also, we can't capture `$rsi` in the block, so we define a temporary variable `$xpcd` that we can use inside the block:
+`lib.rs` should now only need:
 
-```
-(lldb) p (uint64_t) xpc_dictionary_get_count($rsi)
-(uint64_t) $21 = 7
-(lldb) expression
-Enter expressions, then terminate with an empty line to evaluate:
-  1: unsigned long $xpcd = $rsi;
-  2:
-  3: (bool) xpc_dictionary_apply($xpcd, ^(const char *key, void *value) {
-  4:   printf("%s : %s\n", key, (char *)xpc_dictionary_get_string(((void *) $xpcd), key));
-  5: });
-subsystem : (null)
-handle : (null)
-routine : (null)
-name : com.apple.Spotlight
-type : (null)
-legacy : (null)
-domain-port : (null)
-(bool) $43 = true
+```rust
+include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 ```
 
-#### Decoding the XPC Messages
-
-
-
-
-
-
-#### Rust piece
-
+In our other crate's `Cargo.toml` we add it as a dependency:
 
 ```
-$ echo 'int main(int argc, char**argv) { printf("Hello world!\\n"); return 0; }' | clang -o testbin -v -xc -
-$ otool -L testbin
-testbin:
-	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1292.60.1)
+xpc-bindgen = { path="../xpc-bindgen" }
 ```
 
-Seems that `libSystem` has libc. And now for `launchctl`:
+If you did everything correctly, you should now have all of the xpc symbols available in Rust:
 
-```
-$ otool -L $(which launchctl)
-/bin/launchctl:
-	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1292.60.1)
-	/usr/lib/libobjc.A.dylib (compatibility version 1.0.0, current version 228.0.0)
-	/usr/lib/libbsm.0.dylib (compatibility version 1.0.0, current version 1.0.0)
-```
+![](https://i.imgur.com/gA0ObCLl.png)
 
-`libbsm` has to do with [OpenBSM support since 10.6x](https://derflounder.wordpress.com/2012/01/30/openbsm-auditing-on-mac-os-x/), and `libobjc` is the [objc runtime](https://developer.apple.com/documentation/objectivec/objective-c_runtime). Communication between `launchctl` and `launchd` is likely using an IPC API available in `libSystem`.
+##### XPC Plumbing
