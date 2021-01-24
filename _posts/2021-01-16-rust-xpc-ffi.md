@@ -226,7 +226,7 @@ From the docs, our workflow should look something like this:
 
 - [`dispatch_queue_create`](https://developer.apple.com/documentation/dispatch/1453030-dispatch_queue_create?language=occ) to make a new queue for our event handler to consume.
 - [`xpc_connection_create_mach_service`](https://developer.apple.com/documentation/xpc/xpc_connection_mach_service_privileged?language=objc) to register a Mach service and our new queue.
-- [`xpc_connection_set_event_handler`](https://developer.apple.com/documentation/xpc/1448805-xpc_connection_set_event_handler?language=objc) to bind an Objective-C block you want to invoke for every message
+- [`xpc_connection_set_event_handler`](https://developer.apple.com/documentation/xpc/1448805-xpc_connection_set_event_handler?language=objc) to bind a block you want to invoke for every message.
 
 ##### FFI Plumbing
 
@@ -249,7 +249,8 @@ fn main() {
         .header(xpc_path)
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
         .generate()
-        .expect("Unable to generate bindings");
+				.expect("Unable to generate bindings");
+				
     let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
     bindings
         .write_to_file(out_path.join("bindings.rs"))
@@ -257,7 +258,7 @@ fn main() {
 }
 ```
 
-`lib.rs` should now only need:
+`lib.rs` should only need:
 
 ```rust
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
@@ -274,3 +275,53 @@ If you did everything correctly, you should now have all of the xpc symbols avai
 ![](https://i.imgur.com/gA0ObCLl.png)
 
 ##### XPC Plumbing
+
+The first two pieces are fairly straightforward:
+
+```rust
+static APP_ID: &str = "com.dstancu.fun";
+
+fn main() {
+    let app_id_cstr = CString::new(APP_ID)
+        .unwrap()
+        .into_boxed_c_str()
+        .as_ptr();
+
+    let queue = unsafe {
+        dispatch_queue_create(app_id_cstr, null_mut())
+    };
+
+    let connection: xpc_connection_t = unsafe {
+        xpc_connection_create_mach_service(
+						app_id_cstr,
+						queue,
+						XPC_CONNECTION_MACH_SERVICE_PRIVILEGED as u64
+        )
+    };
+}
+```
+
+Earlier we noted that `xpc_connection_set_event_handler` takes a block; the FFI manual recommends pulling in [`block`](https://crates.io/crates/block) crate. I wonder if there is a way to get a pointer to a Rust block, considering `bindgen` uses `*mut c_void` (i.e. `void*`) as the type:
+
+It was a considerable struggle to figure out how to get the tricky `handler` cast to work, but managed to fish a working example out of [the tests](https://github.com/SSheldon/rust-block/blob/master/src/test_utils.rs). 
+
+```rust
+pub type xpc_handler_t = *mut ::std::os::raw::c_void;
+
+let handler = ConcreteBlock::new(move |obj: xpc_object_t| {
+		println!("Received message!");
+		unsafe {
+				let raw_desc: *mut c_char = xpc_copy_description(obj);
+				println!("{}", CString::from_raw(raw_desc).to_str().unwrap());
+		}
+});
+let handler = handler.copy();
+
+// Register handler
+unsafe {
+		xpc_connection_set_event_handler(connection, &*handler as *const _ as *mut _);
+}
+```
+
+Running our program so far doesn't cause any errors! Time to move on to sending the message. We need to create an XPC dictionary using [`xpc_dictionary_create`](https://developer.apple.com/documentation/xpc/1505363-xpc_dictionary_create?language=objc), which expects all k/v up-front:
+
