@@ -1,12 +1,14 @@
 ---
-title: "A convoluted Hello World involving Rust, FFI, and Apple launchd?!"
+title: "Baby's first Rust...with FFI and launchd?!"
 published: true
 layout: post
-categories: macos rust ffi
+categories: macos rust ffi xpc ncurses
 date: 2021-01-02T21:47:44-05:00
 ---
 
-[chkservice](https://github.com/linuxenko/chkservice) is neat ncurses TUI for fiddling with systemd units. The closest we get on Macs is [launch-control](https://www.soma-zone.com/LaunchControl/), otherwise it is `launchctl` or bust. Impressed by _[Ferris'](https://rustacean.net/)_ acting range, I figured it was time to try out some Rust; let's try and build a tool like this that queries Apple `launchd` for its daemons.
+While catching up to a "systemd is ruining everything" discussion online (also: it's not!), [I read a comment](https://news.ycombinator.com/item?id=2565458) that had a cool bit of information I was unaware of: "systemd is inspired by Apple's launchd". I started to wiki-hole init systems and play with `launchctl` on my local machine. A bit more cumbersome to use than `systemctl`, but nonetheless navigable once you understand the domain-targets from the manpage. A `*.plist` defines a service entry (ex brew redis: `~/Library/LaunchAgents/homebrew.mxcl.redis.plist`), with keys like `ProgramArguments` that do obvious things, and other less obvious ones such as `QueueDirectories` which let you spawn jobs when new files appear under a path (how useful)! Prior to fiddling with [soma-zone's LaunchControl](https://www.soma-zone.com/LaunchControl/) (a GUI for managing launchd jobs which is AWESOME and documents these keys!) and reading docs from companion site [launchd.info](https://www.launchd.info/), I had no idea you could do so much with launchd -- especially given most of my interactions with it having been through `brew services`.
+
+Debugging a crashing service can be kind of frustrating (e.g. PostgreSQL major version upgrade, which apparently now has [first class support from brew](https://github.com/Homebrew/homebrew-core/pull/21244/files)). On Linux I've left [chkservice](https://github.com/linuxenko/chkservice) open in a tmux pane while debugging. Having searched online, no hits came up for a similar tool for macOS. With the inertia we often get at 1 AM: "heeeeeeeyyyy, I can try making one!". Every single time I've read about Rust it has always been loved for [for `n+1` years in a row](https://www.reddit.com/r/rust/comments/nksce4/lets_make_it_5_so_survey_for_those_who_dont_know/gzfazzt/). 
 
 #### What do we want to accomplish?
 
@@ -101,7 +103,7 @@ At all!
  */
 ```
 
-PS: The APIs _do_ work for unsanctioned purposes, but that would ruin the fun we're about to have!
+PS: The APIs _do_ work for 'unsanctioned' purposes, but that would ruin the fun we're about to have!
 
 #### How does launchctl do it now?
 
@@ -118,7 +120,7 @@ macOSTaskPolicy: (com.apple.debugserver) may not get the taskport of (launchctl)
 
 [Apple official XPC developer documentation](https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/CreatingXPCServices.html#//apple_ref/doc/uid/10000172i-SW6-SW1)
 
-##### Fun
+##### Decoding the XPC Message
 
 It's time to admit this is probably cheating and reading the docs is better, but install radare2 and go spelunking:
 
@@ -197,7 +199,7 @@ libxpc.dylib`xpc_pipe_routine_with_flags:
 
 In addition, we can access any xpc header function [documented here](https://developer.apple.com/documentation/xpc/1505740-xpc_main?language=objc) from this breakpoint.
 
-[This presentation](https://saelo.github.io/presentations/bits_of_launchd.pdf) explains`launchd` messages have fields that work kind of like syscalls, where you give it a number that corresponds to the routine for some desired effect:
+[This presentation](https://saelo.github.io/presentations/bits_of_launchd.pdf) explains `launchd` messages have fields that work kind of like syscalls, where you give it a number that corresponds to the routine for some desired effect:
 
 | Key       | Desc                                                       |
 |-----------|------------------------------------------------------------|
@@ -212,7 +214,7 @@ In addition, we can access any xpc header function [documented here](https://dev
 |---|-------------------------------|
 | 1 | System (1 instance / system)  |
 | 2 | User (1 / login)              |
-| 3 | User-login (1 / login)        |
+| 3 | User-login (1 / login)        |	
 | 4 | Session (???)                 |
 | 5 | PID (1 / process)             |
 | 6 | User domain for requestor UID |
@@ -220,13 +222,215 @@ In addition, we can access any xpc header function [documented here](https://dev
 
 In theory we should be able to copy this message, send it, then wait for an XPC response with information about `com.apple.Spotlight` as demo'd at the start of the post. It's finally time for the Rust part!
 
-#### Hello world from Rust
+#### Really, really going spelunking
 
-From the docs, our workflow should look something like this:
+IDA Free:
+
+```
+± % launchctl dumpstate uid/501 | head -10                                                                                    !10437
+com.apple.xpc.launchd.domain.system = {
+	type = system
+	handle = 0
+	active count = 659
+	on-demand count = 0
+	service count = 370
+	active service count = 162
+	activity ratio = 0.44
+	maximum allowed shutdown time = 65 s
+	service stats = 0
+```
+
+Search for `on-demand count = %d`
+Xrefs
+Xrefs
+Giant switch spaghettini
+
+## Find the right message
+
+```
+lldb launchctl
+run dumpstate
+b xpc_pipe_routine_with_flags
+(lldb) p printf("%s",(char*)  xpc_copy_description($rsi))
+<dictionary: 0x100604410> { count = 5, transaction: 0, voucher = 0x0, contents =
+	"subsystem" => <uint64: 0x91e45079d2a3988d>: 3
+	"handle" => <uint64: 0x91e45079d2a3a88d>: 0
+	"shmem" => <shmem: 0x100604630>: 20971520 bytes (5121 pages)
+	"routine" => <uint64: 0x91e45079d297888d>: 834
+	"type" => <uint64: 0x91e45079d2a3b88d>: 1
+expr void * $my_shmem = ((void *) xpc_dictionary_get_value($rsi, "shmem"));
+```
+## Continue until you see this in your frame:
+
+```
+frame #0: 0x000000010000a25f launchctl`___lldb_unnamed_symbol62$$launchctl + 331
+launchctl`___lldb_unnamed_symbol62$$launchctl:
+->  0x10000a25f <+331>: movq   %r15, %rdi
+    0x10000a262 <+334>: movq   %rax, %rdx
+    0x10000a265 <+337>: callq  0x10000ddae               ; symbol stub for: fwrite
+    0x10000a26a <+342>: movq   (%rbx), %rdi
+expr void * $my_region = 0; 
+expr size_t $my_shsize = (size_t) xpc_shmem_map($my_shmem, &$my_region);
+(lldb) p $my_shsize
+(size_t) $my_shsize = 20971520
+(lldb) mem read $my_region $my_region+250
+0x103800000: 63 6f 6d 2e 61 70 70 6c 65 2e 78 70 63 2e 6c 61  com.apple.xpc.la
+0x103800010: 75 6e 63 68 64 2e 64 6f 6d 61 69 6e 2e 73 79 73  unchd.domain.sys
+0x103800020: 74 65 6d 20 3d 20 7b 0a 09 74 79 70 65 20 3d 20  tem = {..type =
+0x103800030: 73 79 73 74 65 6d 0a 09 68 61 6e 64 6c 65 20 3d  system..handle =
+0x103800040: 20 30 0a 09 61 63 74 69 76 65 20 63 6f 75 6e 74   0..active count
+0x103800050: 20 3d 20 35 38 33 0a 09 6f 6e 2d 64 65 6d 61 6e   = 583..on-deman
+0x103800060: 64 20 63 6f 75 6e 74 20 3d 20 30 0a 09 73 65 72  d count = 0..ser
+0x103800070: 76 69 63 65 20 63 6f 75 6e 74 20 3d 20 33 36 39  vice count = 369
+0x103800080: 0a 09 61 63 74 69 76 65 20 73 65 72 76 69 63 65  ..active service
+0x103800090: 20 63 6f 75 6e 74 20 3d 20 31 35 30 0a 09 61 63   count = 150..ac
+0x1038000a0: 74 69 76 69 74 79 20 72 61 74 69 6f 20 3d 20 30  tivity ratio = 0
+0x1038000b0: 2e 34 31 0a 09 6d 61 78 69 6d 75 6d 20 61 6c 6c  .41..maximum all
+0x1038000c0: 6f 77 65 64 20 73 68 75 74 64 6f 77 6e 20 74 69  owed shutdown ti
+0x1038000d0: 6d 65 20 3d 20 36 35 20 73 0a 09 73 65 72 76 69  me = 65 s..servi
+0x1038000e0: 63 65 20 73 74 61 74 73 20 3d 20 30 0a 09 63 72  ce stats = 0..cr
+0x1038000f0: 65 61 74 6f 72 20 3d 20 6c 61                    eator = la
+```
+
+Found the routine matchup in the launchd binary:
+
+```
+1000256c8          if (rbx_1 == 0x22)
+1000256c8              var_478 = nullptr
+1000256d3              r13_1 = 0x7d
+1000256d9              if (*data_10005a750 == r12_1)
+1000256f1                  r13_1 = 0x16
+1000256f7                  if (_xpc_dictionary_expects_reply(arg3) != 0)
+100025724                      uint32_t rax_94 = *(*(r12_1 + 0x60) + 0x68)(r12_1, 4, 0, *(r12_1 + 0x68), data_10005b6e0, 0, 0)
+100025727                      int64_t r14_8
+100025727                      if (rax_94 != 0)
+100025740                          sub_100022477(r12_1, data_10005b6e0, rax_94)
+100025745                          r14_8 = 0
+```
+
+Assuming this message sent for `dumpstate`:
+
+```
+<dictionary: 0x100205620> { count = 5, transaction: 0, voucher = 0x0, contents =
+	"subsystem" => <uint64: 0x920e46233afc7be9>: 3
+	"handle" => <uint64: 0x920e46233afc4be9>: 0
+	"shmem" => <shmem: 0x100205470>: 20971520 bytes (5121 pages)
+	"routine" => <uint64: 0x920e46233ac86be9>: 834
+	"type" => <uint64: 0x920e46233afc5be9>: 1
+```
+
+- The `834` corresponds to the `0x22`!
+
+Caller from this method goes up to a function that looks like this:
+
+```
+int64_t sub_10002487b()
+
+10002489b  *data_10005a750 = sub_100022e1c(data_10005a130, 0, 0, nullptr, 0, data_10005a820)
+1000248ae  sub_1000384e8(3, sub_100024920)
+1000248bf  sub_1000384e8(5, sub_1000283c4)
+1000248d0  sub_1000384e8(7, sub_100028af8)
+1000248e1  sub_100038628(sub_10003d56f, 0x830)
+1000248f2  sub_100038628(sub_10003d5dc, 0x2c)
+10002490c  int64_t rax_2 = _host_set_special_port(zx.q(_mach_host_self()), 0x16, zx.q(*data_10005a768), data_10005a768)
+100024911  if (rax_2.d != 0)
+100024919      rax_2 = sub_10003f04a(rax_2.d)
+100024916  return rax_2
+
+```
+
+`3,5,7` subroutines?
+
+#### Obtaining a connection
+
+According to the Apple docs, our workflow would look something like this:
 
 - [`dispatch_queue_create`](https://developer.apple.com/documentation/dispatch/1453030-dispatch_queue_create?language=occ) to make a new queue for our event handler to consume.
 - [`xpc_connection_create_mach_service`](https://developer.apple.com/documentation/xpc/xpc_connection_mach_service_privileged?language=objc) to register a Mach service and our new queue.
 - [`xpc_connection_set_event_handler`](https://developer.apple.com/documentation/xpc/1448805-xpc_connection_set_event_handler?language=objc) to bind a block you want to invoke for every message.
+
+Unfortunately, the small prototype we made didn't work as expected:
+```
+$ cargo run
+Adding legacy <bool: 0x7fff800410b0>: true
+Adding subsystem <int64: 0xfc650c92f304f85d>: 3
+Adding handle <int64: 0xfc650c92f304c85d>: 0
+Adding type <int64: 0xfc650c92f304b85d>: 7
+Adding routine <int64: 0xfc650c92f336385d>: 815
+Adding name <string: 0x7ffd38d045c0> { length = 19, contents = "com.apple.Spotlight" }
+Sending <dictionary: 0x7ffd38d04840> { count = 6, transaction: 0, voucher = 0x0, contents =
+	"handle" => <int64: 0xfc650c92f304c85d>: 0
+	"subsystem" => <int64: 0xfc650c92f304f85d>: 3
+	"routine" => <int64: 0xfc650c92f336385d>: 815
+	"name" => <string: 0x7ffd38d045c0> { length = 19, contents = "com.apple.Spotlight" }
+	"type" => <int64: 0xfc650c92f304b85d>: 7
+	"legacy" => <bool: 0x7fff800410b0>: true
+}
+Received message! <dictionary: 0x7fff800415e0> { count = 1, transaction: 0, voucher = 0x0, contents =
+	"XPCErrorDescription" => <string: 0x7fff80041748> { length = 18, contents = "Connection invalid" }
+}
+```
+
+The message is _almost_ the same, but it is missing one piece: `"domain-port" => <mach send right: 0x100504100>`. Attempting to break on any of the 3 aforementioned functions does not work. Searching didn't yield an awful lot of information, so let's do the only thing we can. What if we set breakpoints on all of the `xpc_*` functions?
+
+Bingo!
+
+```
+* thread #1, queue = 'com.apple.main-thread', stop reason = breakpoint 3.3
+    frame #0: 0x00007fff20089542 libxpc.dylib`xpc_pipe_create_from_port
+libxpc.dylib`xpc_pipe_create_from_port:
+->  0x7fff20089542 <+0>: movq   %rsi, %rdx
+    0x7fff20089545 <+3>: movl   %edi, %esi
+    0x7fff20089547 <+5>: xorl   %edi, %edi
+    0x7fff20089549 <+7>: jmp    0x7fff2009e896            ; _xpc_pipe_create
+(lldb) p $rdi
+(unsigned long) $27 = 1799
+(lldb) p $rsi
+(unsigned long) $28 = 4
+
+* thread #1, queue = 'com.apple.main-thread', stop reason = breakpoint 6.2
+    frame #0: 0x00007fff2008fa85 libxpc.dylib`xpc_dictionary_set_mach_send
+libxpc.dylib`xpc_dictionary_set_mach_send:
+->  0x7fff2008fa85 <+0>: pushq  %rbp
+    0x7fff2008fa86 <+1>: movq   %rsp, %rbp
+    0x7fff2008fa89 <+4>: pushq  %r15
+    0x7fff2008fa8b <+6>: pushq  %r14
+(lldb) p printf("%s",(char*)  xpc_copy_description($rdi))
+}<dictionary: 0x1004042f0> { count = 2, transaction: 0, voucher = 0x0, contents =
+	"handle" => <uint64: 0x74500d8f5837cc29>: 0
+	"type" => <uint64: 0x74500d8f5837bc29>: 7
+(lldb) p (char *) $rsi
+(char *) $35 = 0x00007fff200b2018 "domain-port"
+(lldb) p $rdx
+(unsigned long) $6 = 1799
+```
+
+After searching for these functions, I oddly landed in the [Chromium sandbox sources](https://chromium.googlesource.com/chromium/src/+/refs/tags/61.0.3159.2/sandbox/mac/pre_exec_delegate.cc) and an [iOS CVE](https://github.com/bazad/blanket/blob/master/blanket_payload/bootstrap_port.c). After some digging, `bootstrap.h` brings with it an `extern mach_port_t bootstrap_port`: which has a value of `1799` that matches that of the XPC dictionary in the breakpoint above for `xpc_dictionary_set_mach_send`! The Chrome sources include some [private externs](https://chromium.googlesource.com/chromium/src/+/refs/tags/61.0.3159.2/sandbox/mac/xpc.h) too, giving us more API documentation:
+
+```c
+void xpc_dictionary_set_mach_send(xpc_object_t dictionary,
+                                  const char* name,
+                                  mach_port_t port);
+```
+
+#### Figuring out the EIO
+
+- b `_xpc_pipe_routine` in the Rust program
+	 - xpc_get_type
+	 - mig_get_reply_port
+	 - thread_get_special_reply_port
+	 - _xpc_pipe_pack_message
+	 - _xpc_serializer_get_mach_message_header
+	 - voucher_mach_msg_set
+	 - _xpc_serializer_get_mach_message_length
+	   - 176, so it gets serialized
+	 - _xpc_pipe_mach_msg
+	   - 0, so pipe OK?
+	 - 
+
+#### Hello world from Rust
+
+Now, to put all the pieces together!
 
 ##### FFI Plumbing
 
@@ -243,14 +447,18 @@ fn main() {
         .and_then(|p| p.strip_suffix("\n").map(String::from))
         .expect("macOS SDK Required");
 
-    let xpc_path = format!("{}{}/xpc/xpc.h", sdk_path, MACOS_INCLUDE_PATH);
+		// xpc methods
+		let xpc_path = format!("{}{}/xpc/xpc.h", sdk_path, MACOS_INCLUDE_PATH);
+		// bootstrap_port
+    let bootstrap_path = format!("{}{}/bootstrap.h", sdk_path, MACOS_INCLUDE_PATH);
 
     let bindings = bindgen::Builder::default()
         .header(xpc_path)
+        .header(bootstrap_path)
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
         .generate()
-				.expect("Unable to generate bindings");
-				
+        .expect("Unable to generate bindings");
+
     let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
     bindings
         .write_to_file(out_path.join("bindings.rs"))
@@ -274,7 +482,12 @@ If you did everything correctly, you should now have all of the xpc symbols avai
 
 ![](https://i.imgur.com/gA0ObCLl.png)
 
+
 ##### XPC Plumbing
+
+##### XPC Plumbing Failed
+
+TODO: figure out
 
 The first two pieces are fairly straightforward:
 
@@ -316,7 +529,7 @@ let handler = ConcreteBlock::new(move |obj: xpc_object_t| {
 		}
 });
 let handler = handler.copy();
-
+	
 // Register handler
 unsafe {
 		xpc_connection_set_event_handler(connection, &*handler as *const _ as *mut _);
@@ -324,4 +537,7 @@ unsafe {
 ```
 
 Running our program so far doesn't cause any errors! Time to move on to sending the message. We need to create an XPC dictionary using [`xpc_dictionary_create`](https://developer.apple.com/documentation/xpc/1505363-xpc_dictionary_create?language=objc), which expects all k/v up-front:
+
+```
+```
 
