@@ -6,115 +6,86 @@ categories: macos rust ffi xpc ncurses
 date: 2021-01-02T21:47:44-05:00
 ---
 
-While catching up to a "systemd is ruining everything" discussion online (also: it's not!), [I read a comment](https://news.ycombinator.com/item?id=2565458) that had a cool bit of information I was unaware of: "systemd is inspired by Apple's launchd". I started to wiki-hole init systems and play with `launchctl` on my local machine. A bit more cumbersome to use than `systemctl`, but nonetheless navigable once you understand the domain-targets from the manpage. A `*.plist` defines a service entry (ex brew redis: `~/Library/LaunchAgents/homebrew.mxcl.redis.plist`), with keys like `ProgramArguments` that do obvious things, and other less obvious ones such as `QueueDirectories` which let you spawn jobs when new files appear under a path (how useful)! Prior to fiddling with [soma-zone's LaunchControl](https://www.soma-zone.com/LaunchControl/) (a GUI for managing launchd jobs which is AWESOME and documents these keys!) and reading docs from companion site [launchd.info](https://www.launchd.info/), I had no idea you could do so much with launchd -- especially given most of my interactions with it having been through `brew services`.
+A few months ago I [read a comment](https://news.ycombinator.com/item?id=2565458) on a HN post about GNOME/systemd (part of someone's "zomg systemd is ruining everything" campaign in a chatroom). I learned a cool tidbit of information: apparently systemd was inspired by Apple's launchd. Having subsequently fallen into a wiki-hole about init systems, I began to play with `launchctl` on my local machine. Turns out that launchd does some pretty cool things: the `*.plist` describing a job can do more than just specify its arguments! For example, the `QueueDirectories` key lets you spawn jobs when files are added to a directory (how useful!). I was oblivious to this having interacted with launchd the past years mostly via `brew services`.
 
-Debugging a crashing service can be kind of frustrating (e.g. PostgreSQL major version upgrade, which apparently now has [first class support from brew](https://github.com/Homebrew/homebrew-core/pull/21244/files)). On Linux I've left [chkservice](https://github.com/linuxenko/chkservice) open in a tmux pane while debugging. Having searched online, no hits came up for a similar tool for macOS. With the inertia we often get at 1 AM: "heeeeeeeyyyy, I can try making one!". Every single time I've read about Rust it has always been loved for [for `n+1` years in a row](https://www.reddit.com/r/rust/comments/nksce4/lets_make_it_5_so_survey_for_those_who_dont_know/gzfazzt/). 
+[soma-zone's LaunchControl](https://www.soma-zone.com/LaunchControl/) and [launchd.info](https://www.launchd.info/) companion site are great resources for learning about the supported plist keys and trying out changes quickly. I wondered if there was a similar tool that could run in a terminal: on Linux I've used [chkservice](https://github.com/linuxenko/chkservice) to debug things like a botched major PostgreSQL version update (funny enough, brew [now helps](https://github.com/Homebrew/homebrew-core/pull/21244/files) you with this) across restarts and found it useful to leave in a tmux pane. Not having found a similar tool for macOS, and with the inertia one only has at 1 AM -- I thought "heeeeey, maybe we can make one!". It would also be a good excuse to learn Rust, [loved `n+1` years in a row](https://www.reddit.com/r/rust/comments/nksce4/) by the SO developer survey.
 
-#### What do we want to accomplish?
+Several months of work later (and after almost giving up a few times), I ended up with [launchk](https://github.com/mach-kernel/launchk). The rest of this post will go over: getting started, interfacing with `launchd`, and a bunch of questionable Rust FFI stuff.
 
-`launchctl list` gives us a list of all loaded daemons:
+#### Hello world?
 
-```bash
-$ launchctl list | head -4
-PID	Status	Label
--	0	com.apple.SafariHistoryServiceAgent
-555	0	com.apple.progressd
--	0	com.apple.cloudphotod
+To start, we somehow need to get a list of services.
+
+While reading from `popen("/bin/launchctl", ..)` is a viable strategy, it wouldn't teach us much about the innards of how `launchctl` talks to `launchd`. We could look at the symbols used in the `launchctl` binary, but why not start from [the launchd source code](https://opensource.apple.com/tarballs/launchd/)? `launchctl.c` -> `list_cmd` seemingly has all we need and all of this stuff is available to us by including `launch.h`!
+
+Trying to reproduce the call for listing services does not work. Error is `void *` and to be used with `vproc_strerror(vproc_err_t)`, which I don't have available in my `vproc.h`:
+```c
+launch_data_t list = NULL;
+vproc_err_t error = vproc_swap_complex(NULL, VPROC_GSK_ALLJOBS, NULL, &resp);
+if (error == NULL) {
+		fprintf(stdout, "PID\tStatus\tLabel\n");
+		launch_data_dict_iterate(resp, print_jobs, NULL);
+}
+```
+```
+(lldb) p error
+(vproc_err_t) $0 = 0x00007fff6df967d1
 ```
 
-Providing a daemon name gives us information about it:
-
-```bash
-$ launchctl list com.apple.Spotlight
-{
-	"LimitLoadToSessionType" = "Aqua";
-	"MachServices" = {
-		"com.apple.private.spotlight.mdwrite" = mach-port-object;
-		"com.apple.Spotlight" = mach-port-object;
-	};
-	"Label" = "com.apple.Spotlight";
-	"OnDemand" = true;
-	"LastExitStatus" = 0;
-	"PID" = 431;
-	"Program" = "/System/Library/CoreServices/Spotlight.app/Contents/MacOS/Spotlight";
-	"ProgramArguments" = (
-		"/System/Library/CoreServices/Spotlight.app/Contents/MacOS/Spotlight";
-	);
-	"PerJobMachServices" = {
-		"com.apple.tsm.portname" = mach-port-object;
-		"com.apple.coredrag" = mach-port-object;
-		"com.apple.axserver" = mach-port-object;
-	};
-};
-```
-
-We can display the list of daemons in an ncurses pager, and pop up a dialog with the extra information if someone selects a daemon with enter. That should give us a sufficient amount of stuff to do while keeping the demo nice and sweet. Let's figure out what launchctl does under the hood!
-
-#### How did launchctl do it?
-
-Apple has historically released XNU + other pieces as OSS, so it would be easiest to start by reading [the launchd source code](https://opensource.apple.com/tarballs/launchd/). Problem is that this code is [a bit out of date](https://en.wikipedia.org/wiki/Launchd), launchd is now closed source (probably due to security hardening) and uses libxpc instead:
-
->The last Wayback Machine capture of the Mac OS Forge area for launchd was in June 2012,[9] and the most recent open source version from Apple was 842.92.1 in code for OS X 10.9.5. 
-
-Still, this is much better than nothing. After looking at the source, `launchctl list com.apple.Spotlight` ends up as a new `launch_data_t` which is a dictionary backed by a linked list containing `GetJob` -> `com.apple.Spotlight`:
-
-###### launchctl.c
+A different API call is used if one provides a label after `launchctl list`.
 
 ```c
+// Run: https://gist.github.com/mach-kernel/f25e11caf8b0601465c1215b01498292
+launch_data_t msg, resp = NULL;
 msg = launch_data_alloc(LAUNCH_DATA_DICTIONARY);
-launch_data_dict_insert(msg, launch_data_new_string(label), LAUNCH_KEY_GETJOB);
-
+launch_data_dict_insert(msg, launch_data_new_string("com.apple.Spotlight"), LAUNCH_KEY_GETJOB);
 resp = launch_msg(msg);
-launch_data_free(msg);
+// Loop over dictionary
+launch_data_dict_iterate(resp, print_job, NULL);    
 ```
 
-`launch_msg` is provided in `launch.h`. Hey! I have XCode installed, surely something is there:
-
 ```
-$ find $(xcrun --show-sdk-path) -type f -name 'launch.h'
-/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/launch.h
-```
-
-It looks like they don't want us to use it:
-
-```c
-/* launch_msg()
- *
- * Use this API to check in. Nothing else.
- */
-__ld_normal
-launch_data_t
-launch_msg(const launch_data_t);
+$ ./launch_key_getjob_test com.apple.Spotlight
+LimitLoadToSessionType: Aqua
+MachServices: (cba) 0x7fbfbb504700
+Label: com.apple.Spotlight
+OnDemand: (cba) 0x7fff9464d490
+LastExitStatus: 0
+PID: 562
+Program: /System/Library/CoreServices/Spotlight.app/Contents/MacOS/Spotlight
+ProgramArguments: (cba) 0x7fbfbb504b70
+PerJobMachServices: (cba) 0x7fbfbb5049b0
 ```
 
-At all!
+This looks to be what we want but there is a problem: the API is deprecated (and apparently has been so since macOS 10.9). From the header and the launchd Wikipedia page:
 
-```
-/*!
- * @header
- * These interfaces were only ever documented for the purpose of allowing a
- * launchd job to obtain file descriptors associated with the sockets it
- * advertised in its launchd.plist(5). That functionality is now available in a
- * much more straightforward fashion through the {@link launch_activate_socket}
- * API.
- *
- * There are currently no replacements for other uses of the {@link launch_msg}
- * API, including submitting, removing, starting, stopping and listing jobs.
- */
-```
+> There are currently no replacements for other uses of the {@link launch_msg} API, including submitting, removing, starting, stopping and listing jobs.
 
-PS: The APIs _do_ work for 'unsanctioned' purposes, but that would ruin the fun we're about to have!
+> The last Wayback Machine capture of the Mac OS Forge area for launchd was in June 2012,[9] and the most recent open source version from Apple was 842.92.1 in code for OS X 10.9.5. 
 
-#### How does launchctl do it now?
 
-##### Prep
+#### Surely there is a non-deprecated route
 
-Since `launchd` is closed source now, the only way is to figure out how to sniff the XPC messages. Before starting, if you want to follow along you'll probably need to disable SIP. Otherwise, you won't be able to debug the `launchctl` binary due to Apple's [new hardened runtime requirements](https://lapcatsoftware.com/articles/debugging-mojave.html) and will be greeted by this in the console:
+After some research I learned that the new releases of launchd depend on Apple's closed-source `libxpc`. [This page](http://newosxbook.com/articles/jlaunchctl.html) by the author of the Mac OS X/iOS internals book outlines a method for reading XPC calls: we have to attach and break on `xpc_pipe_routine` from where we can subsequently inspect the messages being sent. [New hardened runtime requirements](https://lapcatsoftware.com/articles/debugging-mojave.html) look at codesign entitlements -- if there is no `get-task-allow`, SIP must be enabled or the debugger won't be able to attach:
 
 ```
 error: MachTask::TaskPortForProcessID task_for_pid failed: ::task_for_pid ( target_tport = 0x0103, pid = 66905, &task ) => err = 0x00000005 ((os/kern) failure)
 macOSTaskPolicy: (com.apple.debugserver) may not get the taskport of (launchctl) (pid: 66905): (launchctl) is hardened, (launchctl) doesn't have get-task-allow, (com.apple.debugserver) is a declared debugger
 ```
+
+Afterwards, I was able to attach, but never hit `xpc_pipe_routine`. Looking at symbols `launchctl` uses, it seems that there is a (new?) function:
+
+```
+$ nm -u /bin/launchctl | grep xpc_pipe
+_xpc_pipe_create_from_port
+_xpc_pipe_routine_with_flags
+```
+
+Breaking here succeeds! [x86_64 calling convention](https://github.com/cirosantilli/x86-assembly-cheat/blob/master/x86-64/calling-convention.md) in a nutshell: first 6 args go into `%rdi %rsi %rdx %rcx %r8 %r9`, and then on the stack.
+
+```
+```
+
 
 [Refer to this comprehensive XPC overview](https://www.objc.io/issues/14-mac/xpc)
 
