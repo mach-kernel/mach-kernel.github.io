@@ -10,7 +10,7 @@ A few months ago I [read a comment](https://news.ycombinator.com/item?id=2565458
 
 [soma-zone's LaunchControl](https://www.soma-zone.com/LaunchControl/) and [launchd.info](https://www.launchd.info/) companion site are great resources for learning about the supported plist keys and trying out changes quickly. I wondered if there was a similar tool that could run in a terminal: on Linux I've used [chkservice](https://github.com/linuxenko/chkservice) to debug things like a botched major PostgreSQL version update (funny enough, brew [now helps](https://github.com/Homebrew/homebrew-core/pull/21244/files) you with this) across restarts and found it useful to leave in a tmux pane. Not having found a similar tool for macOS, and with the inertia one only has at 1 AM -- I thought "heeeeey, maybe we can make one!". It would also be a good excuse to learn Rust, [loved `n+1` years in a row](https://www.reddit.com/r/rust/comments/nksce4/) by the SO developer survey.
 
-Several months of work later (and after almost giving up a few times), I ended up with [launchk](https://github.com/mach-kernel/launchk). The rest of this post will go over: getting started, interfacing with `launchd`, and a bunch of questionable Rust FFI stuff.
+Several months of work later (and after almost giving up a few times), I ended up with [launchk](https://github.com/mach-kernel/launchk). The rest of this post will go over: getting started, interfacing with `launchd`, getting stuck, and a bunch of questionable Rust FFI stuff. 
 
 #### Hello world?
 
@@ -18,7 +18,7 @@ To start, we somehow need to get a list of services.
 
 While reading from `popen("/bin/launchctl", ..)` is a viable strategy, it wouldn't teach us much about the innards of how `launchctl` talks to `launchd`. We could look at the symbols used in the `launchctl` binary, but why not start from [the launchd source code](https://opensource.apple.com/tarballs/launchd/)? `launchctl.c` -> `list_cmd` seemingly has all we need and all of this stuff is available to us by including `launch.h`!
 
-Trying to reproduce the call for listing services does not work. Error is `void *` and to be used with `vproc_strerror(vproc_err_t)`, which I don't have available in my `vproc.h`:
+Trying to reproduce the call for listing services does not work. Error is `void *` and to be used with `vproc_strerror(vproc_err_t)`, which I don't have in my `vproc.h`:
 ```c
 launch_data_t list = NULL;
 vproc_err_t error = vproc_swap_complex(NULL, VPROC_GSK_ALLJOBS, NULL, &resp);
@@ -44,7 +44,7 @@ resp = launch_msg(msg);
 launch_data_dict_iterate(resp, print_job, NULL);    
 ```
 
-```
+```bash
 $ ./launch_key_getjob_test com.apple.Spotlight
 LimitLoadToSessionType: Aqua
 MachServices: (cba) 0x7fbfbb504700
@@ -66,7 +66,7 @@ This looks to be what we want but there is a problem: the API is deprecated (and
 
 #### Surely there is a non-deprecated route
 
-After some research I learned that the new releases of launchd depend on Apple's closed-source `libxpc`. [This page](http://newosxbook.com/articles/jlaunchctl.html) by the author of the Mac OS X/iOS internals book outlines a method for reading XPC calls: we have to attach and break on `xpc_pipe_routine` from where we can subsequently inspect the messages being sent. [New hardened runtime requirements](https://lapcatsoftware.com/articles/debugging-mojave.html) look at codesign entitlements -- if there is no `get-task-allow`, SIP must be enabled or the debugger won't be able to attach:
+After some research I learned that the new releases of launchd depend on Apple's closed-source `libxpc`. [Jonathan Levin's post](http://newosxbook.com/articles/jlaunchctl.html) outlines a method for reading XPC calls: we have to attach and break on `xpc_pipe_routine` from where we can subsequently inspect the messages being sent. [New hardened runtime requirements](https://lapcatsoftware.com/articles/debugging-mojave.html) look at codesign entitlements -- if there is no `get-task-allow`, SIP must be enabled or the debugger won't be able to attach:
 
 ```
 error: MachTask::TaskPortForProcessID task_for_pid failed: ::task_for_pid ( target_tport = 0x0103, pid = 66905, &task ) => err = 0x00000005 ((os/kern) failure)
@@ -75,22 +75,177 @@ macOSTaskPolicy: (com.apple.debugserver) may not get the taskport of (launchctl)
 
 Afterwards, I was able to attach, but never hit `xpc_pipe_routine`. Looking at symbols `launchctl` uses, it seems that there is a (new?) function:
 
-```
+```bash
 $ nm -u /bin/launchctl | grep xpc_pipe
 _xpc_pipe_create_from_port
 _xpc_pipe_routine_with_flags
 ```
 
-Breaking here succeeds! [x86_64 calling convention](https://github.com/cirosantilli/x86-assembly-cheat/blob/master/x86-64/calling-convention.md) in a nutshell: first 6 args go into `%rdi %rsi %rdx %rcx %r8 %r9`, and then on the stack.
+Breaking on `xpc_pipe_routine_with_flags` succeeds! [x86_64 calling convention](https://github.com/cirosantilli/x86-assembly-cheat/blob/master/x86-64/calling-convention.md) in a nutshell: first 6 args go into `%rdi %rsi %rdx %rcx %r8 %r9`, and then on the stack (see link for various edge cases like varadic functions). From the `launjctl` post above, we can use `xpc_copy_description` to get human-readable strings re what is inside an XPC object. [Some searching](https://grep.app/search?q=xpc_pipe_routine_with_flags) also found us the function signature!
+
+```c
+int xpc_pipe_routine_with_flags(xpc_pipe_t pipe, xpc_object_t request, xpc_object_t *reply, uint32_t flags);
+```
 
 ```
+(lldb) b xpc_pipe_routine_with_flags
+(lldb) run list com.apple.Spotlight
+* thread #1, queue = 'com.apple.main-thread', stop reason = breakpoint 1.2
+    frame #0: 0x00007fff2005e841 libxpc.dylib`xpc_pipe_routine_with_flags
+libxpc.dylib`xpc_pipe_routine_with_flags:
+->  0x7fff2005e841 <+0>: pushq  %rbp
+(lldb) p (void *) $rdi
+(OS_xpc_pipe *) $3 = 0x00000001002054b0
+(lldb) p (void *) $rsi
+(OS_xpc_dictionary *) $4 = 0x0000000100205df0
+(lldb) p (void *) *((void **) $rdx)
+(void *) $6 = 0x0000000000000000
+(lldb) p $rcx
+(unsigned long) $8 = 0
+(lldb) p printf("%s",(char*)  xpc_copy_description($rsi))
+}<dictionary: 0x100205dd0> { count = 7, transaction: 0, voucher = 0x0, contents =
+	"subsystem" => <uint64: 0x473e37446dfc3ead>: 3
+	"handle" => <uint64: 0x473e37446dfc0ead>: 0
+	"routine" => <uint64: 0x473e37446dcefead>: 815
+	"name" => <string: 0x100205c80> { length = 19, contents = "com.apple.Spotlight" }
+	"type" => <uint64: 0x473e37446dfc7ead>: 7
+	"legacy" => <bool: 0x7fff800120b0>: true
+	"domain-port" => <mach send right: 0x100205e30> { name = 1799, right = send, urefs = 5 }
 ```
 
+Not shown above are 4 continues: the prior messages likely do some other setup, but we want this object as it has our argument of `com.apple.Spotlight`. We are also interested in `xpc_object_t* reply`, which is in `$rdx` above. We can define a LLDB variable to keep track of the reply pointer while we step through:
 
-[Refer to this comprehensive XPC overview](https://www.objc.io/issues/14-mac/xpc)
+```
+(lldb) expr void** $my_reply = (void **) $rdx
+(lldb) p $my_reply
+(void *) $my_reply = 0x0000000000000000
+```
 
-[Apple official XPC developer documentation](https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/CreatingXPCServices.html#//apple_ref/doc/uid/10000172i-SW6-SW1)
+Keep stepping if it's still null. Eventually it will point to an XPC object that we can inspect:
 
+```
+(lldb) p printf("%s",(char*)  xpc_copy_description(*((void **) $my_reply)))
+<dictionary: 0x1007043f0> { count = 1, transaction: 0, voucher = 0x0, contents =
+	"service" => <dictionary: 0x1007044e0> { count = 9, transaction: 0, voucher = 0x0, contents =
+		"LimitLoadToSessionType" => <string: 0x1007046c0> { length = 4, contents = "Aqua" }
+		"MachServices" => <dictionary: 0x100704540> { count = 2, transaction: 0, voucher = 0x0, contents =
+			"com.apple.private.spotlight.mdwrite" => <mach send right: 0x1007045a0> { name = 0, right = send, urefs = 1 }
+			"com.apple.Spotlight" => <mach send right: 0x100704610> { name = 0, right = send, urefs = 1 }
+		}
+		"Label" => <string: 0x100704750> { length = 19, contents = "com.apple.Spotlight" }
+		"OnDemand" => <bool: 0x7fff800120b0>: true
+		"LastExitStatus" => <int64: 0x1a74b81b7404f909>: 0
+		"PID" => <int64: 0x1a74b81b741be909>: 497
+		"Program" => <string: 0x100704b00> { length = 67, contents = "/System/Library/CoreServices/Spotlight.app/Contents/MacOS/Spotlight" }
+		"ProgramArguments" => <array: 0x1007049b0> { count = 1, capacity = 1, contents =
+			0: <string: 0x100704a40> { length = 67, contents = "/System/Library/CoreServices/Spotlight.app/Contents/MacOS/Spotlight" }
+		}
+		"PerJobMachServices" => <dictionary: 0x1007047f0> { count = 3, transaction: 0, voucher = 0x0, contents =
+			"com.apple.tsm.portname" => <mach send right: 0x100704850> { name = 0, right = send, urefs = 1 }
+			"com.apple.coredrag" => <mach send right: 0x100704910> { name = 0, right = send, urefs = 1 }
+			"com.apple.axserver" => <mach send right: 0x1007048b0> { name = 0, right = send, urefs = 1 }
+		}
+	}
+```
+
+Looks like some of the same keys we saw from the `launch_msg` example! Better yet, we can manipulate `xpc_object_t` by importing `xpc.h` as described by [Apple's XPC Objects](https://developer.apple.com/documentation/xpc/xpc_objects?language=objc) documentation. For example, we can try to read the "ProgramArguments" key:
+
+```
+(lldb) p (void *) xpc_dictionary_get_dictionary(*((void**) $my_reply), "service");
+(OS_xpc_dictionary *) $30 = 0x00000001007044e0
+(lldb) expr void * $service = (void *) 0x00000001007044e0;
+(lldb) p printf("%s",(char*) xpc_copy_description((void *) xpc_dictionary_get_array((void *) $service, "ProgramArguments")))
+}<array: 0x1007049b0> { count = 1, capacity = 1, contents =
+	0: <string: 0x100704a40> { length = 67, contents = "/System/Library/CoreServices/Spotlight.app/Contents/MacOS/Spotlight" }
+```
+
+We can create a dictionary with `xpc_dictionary_create` and populate it `xpc_dictionary_set_*`. We can read & interact with the reply. Two pieces remain:
+
+- `xpc_pipe_routine_with_flags` requires a `xpc_pipe_t` -- how do we get one?
+- What is `"domain-port" => <mach send right: 0x100205e30> { name = 1799, right = send, urefs = 5 }`? The XPC Objects docs do not mention anything about `mach send`.
+
+#### macOS IPC
+
+Answering those questions was the first significant hurdle. This is broad and detailed topic, so I will do my best to summarize as needed. To begin with terminology: XPC and Mach ports are both IPC mechanisms. XPC is implemented atop Mach ports and provides a nice high level connections API ([`NSXPCConnection`](https://developer.apple.com/documentation/foundation/nsxpcconnection?language=objc)). launchd can start XPC services on-demand (lazily, when messages are sent to that service) and spin them down if the system experiences load and they are idle. It's recommended (for convenience, security) to use XPC if possible. And, as we saw above in the `XPC Objects` API docs, `xpc_object_t` can be a reference to an array, dictonary, string, etc.
+
+On macOS, creating a new UNIX process spawns a new Mach task with a thread. A task is an execution context for one or more threads, most importantly providing paged & protected virtual memory, and access to other system resources via Mach ports. Ports are handles to kernel-managed secure IPC data structures (usually a message queue or synchronization primitive). The kernel enforces port access through rights: a send right allows you to queue a message, a receive right allows you to dequeue a message. A port has a single receiver (only one task may hold a receive right), but many tasks may hold send rights for the same port. A port is analogous to a UNIX pipe or a unidirectional channel. A task also has several "special ports" which we will discuss in a little while.
+
+In the launchctl symbols we see a `xpc_pipe_create_from_port`. Some online digging revealed headers with the function definition and example usages in [Chromium sandbox code](https://chromium.googlesource.com/experimental/chromium/src/+/refs/wip/bajones/webvr/sandbox/mac/pre_exec_delegate.cc). Breaking on `xpc_pipe_create_from_port` we can look at the args:
+
+```c
+xpc_pipe_t xpc_pipe_create_from_port(mach_port_t port, int flags);
+```
+
+```
+* thread #1, queue = 'com.apple.main-thread', stop reason = breakpoint 2.6
+    frame #0: 0x00007fff2005a542 libxpc.dylib`xpc_pipe_create_from_port
+libxpc.dylib`xpc_pipe_create_from_port:
+->  0x7fff2005a542 <+0>: movq   %rsi, %rdx
+    0x7fff2005a545 <+3>: movl   %edi, %esi
+    0x7fff2005a547 <+5>: xorl   %edi, %edi
+    0x7fff2005a549 <+7>: jmp    0x7fff2006f896            ; _xpc_pipe_create
+(lldb) p $rdi
+(unsigned long) $52 = 1799
+(lldb) p $rsi
+(unsigned long) $58 = 4
+(lldb) p/t $rsi
+(unsigned long) $57 = 0b0000000000000000000000000000000000000000000000000000000000000100
+```
+
+So we can make an XPC pipe from a Mach port, and the `port` and `flags` args remain the same across runs. The value of `port` matches the `domain-port` key sent in the dictionary for `launchctl list`. 
+
+
+Not sure how to describe XPC pipes other than they look like a Mach port that can serialize XPC objects. 
+
+
+
+Furthermore, the `port` and `flags` arguments remain the same across runs. The `1799` value also matches the `domain-port` argument sent as a part of the launchctl query. Earlier we made mention of special ports: 
+
+
+
+Putting this information together:
+
+```c
+// Run: https://gist.github.com/mach-kernel/f05dcab3293f8c1c1ec218637f16ff73
+xpc_pipe_t bootstrap_pipe = xpc_pipe_create_from_port(bootstrap_port, 4);
+xpc_object_t list_request = xpc_dictionary_create(NULL, NULL, 0);
+
+xpc_dictionary_set_uint64(list_request, "subsystem", 3);
+xpc_dictionary_set_uint64(list_request, "handle", 0);
+xpc_dictionary_set_uint64(list_request, "routine", 815);
+xpc_dictionary_set_string(list_request, "name", "com.apple.Spotlight");
+xpc_dictionary_set_uint64(list_request, "type", 7);
+xpc_dictionary_set_bool(list_request, "legacy", true);
+xpc_dictionary_set_mach_send(list_request, "domain-port", bootstrap_port);
+```
+
+Success! We see a reply that is the similar to the one we inspected in the debugger earlier.
+
+```
+bootstrap_port: 1799
+XPC Response:
+
+<dictionary: 0x7f837dd044f0> { count = 1, transaction: 0, voucher = 0x0, contents =
+	"service" => <dictionary: 0x7f837dd045e0> { count = 9, transaction: 0, voucher = 0x0, contents =
+		"LimitLoadToSessionType" => <string: 0x7f837dd047c0> { length = 4, contents = "Aqua" }
+...
+```
+
+Remember those special ports?
+
+
+A new task has these special port send rights:
+- `mach_task_self` - Manage current task virtual memory and scheduling priority
+- `mach_thread_self` - Manage thread (suspend/resume/scheduling/etc)
+- `mach_host_self` - Query for kernel & host information
+- `bootstrap_port` - A port to the bootstrap server (launchd)
+
+The bootstrap server in addition to bringing up the system also maintains a registry of names to Mach ports. An application can use `bootstrap_look_up(bootstrap_port, "com.foo.something", &my_port)` to get a send right to the named service.
+
+
+-------
+
+SCRATCH
 ##### Decoding the XPC Message
 
 It's time to admit this is probably cheating and reading the docs is better, but install radare2 and go spelunking:

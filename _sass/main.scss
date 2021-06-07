@@ -40,10 +40,8 @@ body {
       font-size: 0.8rem;
       padding: 5px;
 
-      pre {
-        tab-size: 2;
-        -moz-tab-size: 2;
-      }
+      tab-size: 2;
+      -moz-tab-size: 2;
     }
 
     blockquote p {
@@ -52,6 +50,9 @@ body {
       // font-style: italic;
       font-size: 0.8rem;
       border-left: 4px solid $dstancu-accent;
+      border-right: 1px solid #c0c0c0;
+      border-bottom: 1px solid #c0c0c0;
+      border-top: 1px solid #c0c0c0;
     }
   }
 }
