@@ -23,8 +23,8 @@ Trying to reproduce the call for listing services does not work. Error is `void 
 ```c
 vproc_err_t error = vproc_swap_complex(NULL, VPROC_GSK_ALLJOBS, NULL, &resp);
 if (error == NULL) {
-		fprintf(stdout, "PID\tStatus\tLabel\n");
-		launch_data_dict_iterate(resp, print_jobs, NULL);
+    fprintf(stdout, "PID\tStatus\tLabel\n");
+    launch_data_dict_iterate(resp, print_jobs, NULL);
 }
 ```
 ```
@@ -103,13 +103,13 @@ libxpc.dylib`xpc_pipe_routine_with_flags:
 (unsigned long) $8 = 0
 (lldb) p printf("%s",(char*)  xpc_copy_description($rsi))
 }<dictionary: 0x100205dd0> { count = 7, transaction: 0, voucher = 0x0, contents =
-	"subsystem" => <uint64: 0x473e37446dfc3ead>: 3
-	"handle" => <uint64: 0x473e37446dfc0ead>: 0
-	"routine" => <uint64: 0x473e37446dcefead>: 815
-	"name" => <string: 0x100205c80> { length = 19, contents = "com.apple.Spotlight" }
-	"type" => <uint64: 0x473e37446dfc7ead>: 7
-	"legacy" => <bool: 0x7fff800120b0>: true
-	"domain-port" => <mach send right: 0x100205e30> { name = 1799, right = send, urefs = 5 }
+  "subsystem" => <uint64: 0x473e37446dfc3ead>: 3
+  "handle" => <uint64: 0x473e37446dfc0ead>: 0
+  "routine" => <uint64: 0x473e37446dcefead>: 815
+  "name" => <string: 0x100205c80> { length = 19, contents = "com.apple.Spotlight" }
+  "type" => <uint64: 0x473e37446dfc7ead>: 7
+  "legacy" => <bool: 0x7fff800120b0>: true
+  "domain-port" => <mach send right: 0x100205e30> { name = 1799, right = send, urefs = 5 }
 ```
 
 Not shown above are 4 continues: the prior messages likely do some other setup, but we want this object as it has our argument of `com.apple.Spotlight`. We are also interested in `xpc_object_t* reply`, which is in `$rdx` above. We can define a LLDB variable to keep track of the reply pointer while we step through:
@@ -125,26 +125,26 @@ Keep stepping if it's still null. Eventually it will point to an XPC object that
 ```
 (lldb) p printf("%s",(char*)  xpc_copy_description(*((void **) $my_reply)))
 <dictionary: 0x1007043f0> { count = 1, transaction: 0, voucher = 0x0, contents =
-	"service" => <dictionary: 0x1007044e0> { count = 9, transaction: 0, voucher = 0x0, contents =
-		"LimitLoadToSessionType" => <string: 0x1007046c0> { length = 4, contents = "Aqua" }
-		"MachServices" => <dictionary: 0x100704540> { count = 2, transaction: 0, voucher = 0x0, contents =
-			"com.apple.private.spotlight.mdwrite" => <mach send right: 0x1007045a0> { name = 0, right = send, urefs = 1 }
-			"com.apple.Spotlight" => <mach send right: 0x100704610> { name = 0, right = send, urefs = 1 }
-		}
-		"Label" => <string: 0x100704750> { length = 19, contents = "com.apple.Spotlight" }
-		"OnDemand" => <bool: 0x7fff800120b0>: true
-		"LastExitStatus" => <int64: 0x1a74b81b7404f909>: 0
-		"PID" => <int64: 0x1a74b81b741be909>: 497
-		"Program" => <string: 0x100704b00> { length = 67, contents = "/System/Library/CoreServices/Spotlight.app/Contents/MacOS/Spotlight" }
-		"ProgramArguments" => <array: 0x1007049b0> { count = 1, capacity = 1, contents =
-			0: <string: 0x100704a40> { length = 67, contents = "/System/Library/CoreServices/Spotlight.app/Contents/MacOS/Spotlight" }
-		}
-		"PerJobMachServices" => <dictionary: 0x1007047f0> { count = 3, transaction: 0, voucher = 0x0, contents =
-			"com.apple.tsm.portname" => <mach send right: 0x100704850> { name = 0, right = send, urefs = 1 }
-			"com.apple.coredrag" => <mach send right: 0x100704910> { name = 0, right = send, urefs = 1 }
-			"com.apple.axserver" => <mach send right: 0x1007048b0> { name = 0, right = send, urefs = 1 }
-		}
-	}
+  "service" => <dictionary: 0x1007044e0> { count = 9, transaction: 0, voucher = 0x0, contents =
+    "LimitLoadToSessionType" => <string: 0x1007046c0> { length = 4, contents = "Aqua" }
+    "MachServices" => <dictionary: 0x100704540> { count = 2, transaction: 0, voucher = 0x0, contents =
+      "com.apple.private.spotlight.mdwrite" => <mach send right: 0x1007045a0> { name = 0, right = send, urefs = 1 }
+      "com.apple.Spotlight" => <mach send right: 0x100704610> { name = 0, right = send, urefs = 1 }
+    }
+    "Label" => <string: 0x100704750> { length = 19, contents = "com.apple.Spotlight" }
+    "OnDemand" => <bool: 0x7fff800120b0>: true
+    "LastExitStatus" => <int64: 0x1a74b81b7404f909>: 0
+    "PID" => <int64: 0x1a74b81b741be909>: 497
+    "Program" => <string: 0x100704b00> { length = 67, contents = "/System/Library/CoreServices/Spotlight.app/Contents/MacOS/Spotlight" }
+    "ProgramArguments" => <array: 0x1007049b0> { count = 1, capacity = 1, contents =
+      0: <string: 0x100704a40> { length = 67, contents = "/System/Library/CoreServices/Spotlight.app/Contents/MacOS/Spotlight" }
+    }
+    "PerJobMachServices" => <dictionary: 0x1007047f0> { count = 3, transaction: 0, voucher = 0x0, contents =
+      "com.apple.tsm.portname" => <mach send right: 0x100704850> { name = 0, right = send, urefs = 1 }
+      "com.apple.coredrag" => <mach send right: 0x100704910> { name = 0, right = send, urefs = 1 }
+      "com.apple.axserver" => <mach send right: 0x1007048b0> { name = 0, right = send, urefs = 1 }
+    }
+  }
 ```
 
 Looks like some of the same keys we saw from the `launch_msg` example! Better yet, we can manipulate `xpc_object_t` by importing `xpc.h` as described by [Apple's XPC Objects](https://developer.apple.com/documentation/xpc/xpc_objects?language=objc) documentation. For example, we can try to read the "ProgramArguments" key:
@@ -155,7 +155,7 @@ Looks like some of the same keys we saw from the `launch_msg` example! Better ye
 (lldb) expr void * $service = (void *) 0x00000001007044e0;
 (lldb) p printf("%s",(char*) xpc_copy_description((void *) xpc_dictionary_get_array((void *) $service, "ProgramArguments")))
 }<array: 0x1007049b0> { count = 1, capacity = 1, contents =
-	0: <string: 0x100704a40> { length = 67, contents = "/System/Library/CoreServices/Spotlight.app/Contents/MacOS/Spotlight" }
+  0: <string: 0x100704a40> { length = 67, contents = "/System/Library/CoreServices/Spotlight.app/Contents/MacOS/Spotlight" }
 ```
 
 We can create a dictionary with `xpc_dictionary_create` and populate it `xpc_dictionary_set_*`. We can read & interact with the reply. Two pieces remain:
@@ -234,8 +234,8 @@ bootstrap_port: 1799
 XPC Response:
 
 <dictionary: 0x7f837dd044f0> { count = 1, transaction: 0, voucher = 0x0, contents =
-	"service" => <dictionary: 0x7f837dd045e0> { count = 9, transaction: 0, voucher = 0x0, contents =
-		"LimitLoadToSessionType" => <string: 0x7f837dd047c0> { length = 4, contents = "Aqua" }
+  "service" => <dictionary: 0x7f837dd045e0> { count = 9, transaction: 0, voucher = 0x0, contents =
+    "LimitLoadToSessionType" => <string: 0x7f837dd047c0> { length = 4, contents = "Aqua" }
 ...
 ```
 
@@ -273,7 +273,7 @@ Things don't look terribly different. `*mut c_void` and `*const c_char` are equi
 
 ```rust
 let bootstrap_pipe: xpc_pipe_t = unsafe {
-		xpc_pipe_create_from_port(bootstrap_port, 0)
+    xpc_pipe_create_from_port(bootstrap_port, 0)
 };
 
 // pub fn xpc_dictionary_create(
@@ -283,7 +283,7 @@ let bootstrap_pipe: xpc_pipe_t = unsafe {
 // ) -> xpc_object_t;
 
 let list_request: xpc_object_t = unsafe {
-		xpc_dictionary_create(null(), null_mut(), 0)
+    xpc_dictionary_create(null(), null_mut(), 0)
 };
 ```
 
@@ -295,7 +295,7 @@ let not_a_cstring: &str = "subsystem";
 let cstring: CString = CString::new(not_a_cstring).unwrap();
 
 unsafe {
-		xpc_dictionary_set_uint64(list_request, CString::new("subsystem").unwrap().as_ptr(), 3);
+    xpc_dictionary_set_uint64(list_request, CString::new("subsystem").unwrap().as_ptr(), 3);
 }
 ```
 
@@ -308,17 +308,17 @@ Once the dictionary is filled we can attempt the XPC call:
 let mut reply: xpc_object_t = null_mut();
 
 let err = unsafe {
-		xpc_pipe_routine_with_flags(bootstrap_pipe, list_request, &mut reply, 0)
+    xpc_pipe_routine_with_flags(bootstrap_pipe, list_request, &mut reply, 0)
 };
 
 if err == 0 {
-		let desc = unsafe {
-				CStr::from_ptr(xpc_copy_description(reply))
-		};
+    let desc = unsafe {
+        CStr::from_ptr(xpc_copy_description(reply))
+    };
 
-		println!("XPC Response\n{}", desc.to_string_lossy())
+    println!("XPC Response\n{}", desc.to_string_lossy())
 } else {
-		println!("Error: {}", err)
+    println!("Error: {}", err)
 }
 ```
 
@@ -373,20 +373,20 @@ Then, a roundtrip test, and one with a wrong type. This hopefully should keep us
 ```rust
 #[test]
 fn xpc_value_i64() {
-		let xpc_i64 = XPCObject::from(std::i64::MAX);
-		let rs_i64: i64 = xpc_i64.xpc_value().unwrap();
-		assert_eq!(std::i64::MAX, rs_i64);
+    let xpc_i64 = XPCObject::from(std::i64::MAX);
+    let rs_i64: i64 = xpc_i64.xpc_value().unwrap();
+    assert_eq!(std::i64::MAX, rs_i64);
 }
 
 #[test]
 fn xpc_to_rs_with_wrong_type() {
-		let xpc_i64 = XPCObject::from(42 as i64);
-		let as_u64: Result<u64, XPCError> = xpc_i64.xpc_value();
+    let xpc_i64 = XPCObject::from(42 as i64);
+    let as_u64: Result<u64, XPCError> = xpc_i64.xpc_value();
 
-		assert_eq!(
-				as_u64.err().unwrap(),
-				ValueError("Cannot get int64 as uint64".to_string())
-		);
+    assert_eq!(
+        as_u64.err().unwrap(),
+        ValueError("Cannot get int64 as uint64".to_string())
+    );
 }
 ```
 
@@ -404,19 +404,19 @@ I kept segfaulting and could not figure out why. After all, I could log the k-vs
 
 ```rust
 let map: Arc<RefCell<HashMap<String, Arc<XPCObject>>>> =
-		Arc::new(RefCell::new(HashMap::new()));
+    Arc::new(RefCell::new(HashMap::new()));
 let map_block_clone = map.clone()
 
 let block = ConcreteBlock::new(move |key: *const c_char, value: xpc_object_t| {
-		unsafe { xpc_retain(value) };
-		let str_key = unsafe { CStr::from_ptr(key).to_string_lossy().to_string() };
+    unsafe { xpc_retain(value) };
+    let str_key = unsafe { CStr::from_ptr(key).to_string_lossy().to_string() };
 
-		let xpc_object: XPCObject = value.into();
-		map_block_clone
-				.borrow_mut()
-				.insert(str_key, xpc_object.into());
+    let xpc_object: XPCObject = value.into();
+    map_block_clone
+        .borrow_mut()
+        .insert(str_key, xpc_object.into());
 
-		true
+    true
 });
 
 let block = block.copy();
@@ -465,48 +465,76 @@ There is not a whole lot more from here on out. An `XPCPipeable` trait handles w
 
 ```rust
 let LIST_SERVICES: XPCDictionary = XPCDictionary::new()
-		.entry("subsystem", 3 as u64)
-		.entry("handle", 0 as u64)
-		.entry("routine", 815 as u64)
-		.entry("legacy", true);
+    .entry("subsystem", 3 as u64)
+    .entry("handle", 0 as u64)
+    .entry("routine", 815 as u64)
+    .entry("legacy", true);
 
 let reply: Result<XPCDictionary, XPCError> = XPCDictionary::new()
-		.extend(&LIST_SERVICES)
-		// Specify the domain type, or fall back on requester domain
-		.with_domain_type_or_default(Some(domain_type))
-		.entry_if_present("name", Some("com.apple.Spotlight"))
-		.pipe_routine_with_error_handling();
+    .extend(&LIST_SERVICES)
+    // Specify the domain type, or fall back on requester domain
+    .with_domain_type_or_default(Some(domain_type))
+    .entry_if_present("name", Some("com.apple.Spotlight"))
+    .pipe_routine_with_error_handling();
 ```
 
 This looks a lot better than what we started with in the first part. I don't know about "idiomatic", but I can live with it. There remains more work to be done: for example, `pipe_routine_with_error_handling` should ideally be able to take a pipe as an argument instead of blindly using the bootstrap pipe, the `XPC*` structs have public pointer members, and so on. I hope to fix these things in the coming months as I get more free time.
 
 We shall move on, but feel free to look at [xpc-sys](https://github.com/mach-kernel/launchk/tree/master/xpc-sys) to see the end result.
 
-#### What's in a tool?
+#### Making a TUI
 
-With the XPC crate in hand we can start building the TUI. I used [Cursive](https://github.com/gyscos/cursive) because the view absractions were very easy to grok and get started with. Much of the visual layout was inspired by another TUI I use for managing Kubernetes clusters: [k9s](https://github.com/derailed/k9s). 
+I used [Cursive](https://github.com/gyscos/cursive) because the view absractions were very easy to grok and get started with. Much of the visual layout was inspired by another TUI I use for managing Kubernetes clusters: [k9s](https://github.com/derailed/k9s). The omnibox-style interface is simple to use and appears to be straightforward to implement: we can make a component for an omnibox then have views that subscribe to its events implement an `OmniboxSubscriber` trait:
 
--------
+```rust
+pub trait OmniboxSubscriber: View {
+    fn on_omnibox(&mut self, cmd: OmniboxEvent) -> OmniboxResult;
+}
 
-SCRATCH SPACE
+// This is here so we can do view.as_any_mut().downcast_mut::<OmniboxSubscribedView>()
+pub trait Subscribable: View + OmniboxSubscriber {
+    fn subscribable(self) -> OmniboxSubscribedView
+    where
+        Self: Sized,
+    {
+        OmniboxSubscribedView::new(self)
+    }
+}
+```
 
-[This presentation](https://saelo.github.io/presentations/bits_of_launchd.pdf) explains `launchd` messages have fields that work kind of like syscalls, where you give it a number that corresponds to the routine for some desired effect:
+I chose a [`LinearLayout`](https://docs.rs/cursive/0.8.1/cursive/views/struct.LinearLayout.html) as my root container. Only one child can be focused at a time in a `LinearLayout` which seems reasonable: we invoke `on_omnibox` for only that child. [tokio](https://github.com/tokio-rs/tokio) futures with an interval were used to keep polling the XPC endpoint that returned the list of services (so we can see things as they pop on or off).
 
-| Key       | Desc                                                       |
-|-----------|------------------------------------------------------------|
-| type      | [int] Domain type (see below)                              |
-| handle    | ???   Handle to ???                                        |
-| subsystem | [int] Function that should handle request                  |
-| routine   | [int] Routine (sub-fn) that should handle request          |
-| name      | [string]                                                   |
-| flags     | ???                                                        |
+Past this point the rest of the challenges were related to `launchd`. For example, the `type` key in the XPC message changes with the desired target domain for a given service. The `type` key is required when both starting and stopping a service. [bits of launchd](https://saelo.github.io/presentations/bits_of_launchd.pdf) was useful and helped clarify what domains each of the types mapped to. To find services, it was easy to query for every `type` key and return the first match. However, when they are not running, how do we know which one to choose? I was not able to figure this out and settled on a prompt:
 
-| Domain | Desc                     |
-|---|-------------------------------|
-| 1 | System (1 instance / system)  |
-| 2 | User (1 / login)              |
-| 3 | User-login (1 / login)        |	
-| 4 | Session (???)                 |
-| 5 | PID (1 / process)             |
-| 6 | User domain for requestor UID |
-| 7 | Requestor domain              |
+![](https://i.imgur.com/UApPbOpm.png)
+
+Similarly, it would be nice to filter out services that are enabled and disabled. `launchctl dumpstate` includes this information, so I thought it would be easy to do the same as before (grab the info out of an XPC dictionary). The dumpstate endpoint takes a shmem box, inside it? A giant string:
+
+```
+b xpc_pipe_routine_with_flags
+(lldb) p printf("%s",(char*)  xpc_copy_description($rsi))
+<dictionary: 0x100604410> { count = 5, transaction: 0, voucher = 0x0, contents =
+	"subsystem" => <uint64: 0x91e45079d2a3988d>: 3
+	"handle" => <uint64: 0x91e45079d2a3a88d>: 0
+	"shmem" => <shmem: 0x100604630>: 20971520 bytes (5121 pages)
+	"routine" => <uint64: 0x91e45079d297888d>: 834
+	"type" => <uint64: 0x91e45079d2a3b88d>: 1
+expr void * $my_shmem = ((void *) xpc_dictionary_get_value($rsi, "shmem"));
+expr void * $my_region = 0; 
+expr size_t $my_shsize = (size_t) xpc_shmem_map($my_shmem, &$my_region);
+(lldb) p $my_shsize
+(size_t) $my_shsize = 20971520
+(lldb) mem read $my_region $my_region+250
+0x103800000: 63 6f 6d 2e 61 70 70 6c 65 2e 78 70 63 2e 6c 61  com.apple.xpc.la
+0x103800010: 75 6e 63 68 64 2e 64 6f 6d 61 69 6e 2e 73 79 73  unchd.domain.sys
+0x103800020: 74 65 6d 20 3d 20 7b 0a 09 74 79 70 65 20 3d 20  tem = {..type =
+0x103800030: 73 79 73 74 65 6d 0a 09 68 61 6e 64 6c 65 20 3d  system..handle =
+0x103800040: 20 30 0a 09 61 63 74 69 76 65 20 63 6f 75 6e 74   0..active count
+0x103800050: 20 3d 20 35 38 33 0a 09 6f 6e 2d 64 65 6d 61 6e   = 583..on-deman
+```
+
+Unsure if there's a safe and easy way to parse this, I threw it in `$PAGER` for now. Other weirdness has to do with `xpc_pipe_routine` and its errors. My Catalina Mac shows info errors but I don't see them at all on Big Sur. An example from trying to `reload` Redis:
+
+![](https://i.imgur.com/wthF2Chm.png)
+
+
