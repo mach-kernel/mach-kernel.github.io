@@ -1,5 +1,5 @@
 ---
-title: "Baby's first Rust with extra steps"
+title: "Baby's first Rust with extra steps (private APIs, launchd, and FFI)!"
 published: true
 layout: post
 categories: macos rust ffi xpc ncurses
@@ -239,7 +239,7 @@ XPC Response:
 ...
 ```
 
-There is more to be discussed regarding `xpc_pipe_routine` and MIG, but at this point we've collected enough info to move on. We know what C headers and functions need to be used to make queries against `launchd`, and we know how to dump queries made by `launchctl`. 
+There is more to be discussed regarding `xpc_pipe_routine` and MIG (edit: probably another post, this one is already huge), but at this point we've collected enough info to move on. We know what C headers and functions need to be used to make queries against `launchd`, and we know how to dump queries made by `launchctl`. 
 
 #### Trying out bindgen
 
@@ -324,7 +324,7 @@ if err == 0 {
 
 #### Trying to make it better
 
-The goal (as I understand it) is to make an API for safe usages of the bindings. A friend of mine and [Jeff Hiner's](https://medium.com/dwelo-r-d/wrapping-unsafe-c-libraries-in-rust-d75aeb283c65) post have invaluable resources (which I will quote to help me). I still have a lot of work to do on FFI etiquette!
+The goal (as I understand it) is to make an API for safe _usages_ of the bindings. A friend of mine and [Jeff Hiner's](https://medium.com/dwelo-r-d/wrapping-unsafe-c-libraries-in-rust-d75aeb283c65) post have invaluable resources (which I will quote to help me). I still have a lot of work to do on FFI etiquette! The first step as suggested by my friend was to make a `*-sys` crate for the bindings: to 
 
 Everything revolves around `xpc_object_t`. I made a struct around it and `xpc_type_t` (get with `xpc_get_type`), to make it more convenient to check whether or not to call `xpc_int64_get_value` vs `xpc_uint64_get_value`, etc. We will talk about `Send` and `Sync` in a little bit.
 
@@ -423,7 +423,16 @@ let block = block.copy();
 let ok = unsafe { xpc_dictionary_apply(object.as_ptr(), &*block as *const _ as *mut _) };
 ```
 
-This is an important moment: things are happening in the system outside of whatever you're doing in lexical eyeshot that looks hunky dory. We can't always safely dereference `xpc_object_t`, and should be explicit about doing so. [Code like this](https://github.com/mach-kernel/launchk/blob/e7da7809c93f72f0b4f0702a8651d27b910a4bee/launchk/src/launchd/query.rs#L146-L151) is not good -- it means the Rust `XPCShmem` object is not always safe to use. But I am not sure how to make it better.
+This is an important moment: things are happening in the system outside of whatever you're doing in lexical eyeshot that merely looks hunky dory. This means that XPCObject isn't always safe to use, because we can't always safely dereference `xpc_object_t`. It is also bad to have calls to `xpc_retain` littered around the code where their purpose isn't obvious, [something I've only recently](https://github.com/mach-kernel/launchk/pull/13) fixed by calling `xpc_retain` every time an `XPCObject` is made. Like this, I can get a better guarantee about the underlying XPCObject living until Rust drops it, where we can add an `xpc_release` call:
+
+```rust
+impl Drop for XPCObject {
+    fn drop(&mut self) {
+        let XPCObject(ptr, _) = self;
+        unsafe { xpc_release(*ptr) }
+    }
+}
+```
 
 Not being explicit threw me into another roadblock that also took on the order of days to figure out. This is the same `launchctl list` XPC dictionary we have been using for all of the examples:
 
@@ -444,9 +453,42 @@ let dictionary: XPCObject = XPCObject::from(message);
 message.insert("routine", XPCObject::from(815 as u64));
 ```
 
+There is not a whole lot more from here on out. An `XPCPipeable` trait handles wrapping `xpc_pipe_routine` and surfacing errors in a `Result<XPCObject, XPCError>`, including those we get in the XPC response (try one of the earlier examples with a dummy name). `xpc_strerror` can be used both for the errno returned by the pipe function and the error codes provided in the dictionary:
+
+```
+<dictionary: 0x7fccf0604240> { count = 1, transaction: 0, voucher = 0x0, contents =
+        "error" => <int64: 0x46e15ff7d31ff269>: 113
+}
+```
+
+[`XPCDictionary`](https://github.com/mach-kernel/launchk/blob/master/xpc-sys/src/objects/xpc_dictionary.rs) and [`XPCShmem`](https://github.com/mach-kernel/launchk/blob/master/xpc-sys/src/objects/xpc_shmem.rs) were made for these two 'special' types of XPC objects, and a [`QueryBuilder`](https://github.com/mach-kernel/launchk/blob/master/launchk/src/launchd/query_builder.rs) to avoid repeating code that inserts the same few keys into a dictionary.
+
+```rust
+let LIST_SERVICES: XPCDictionary = XPCDictionary::new()
+		.entry("subsystem", 3 as u64)
+		.entry("handle", 0 as u64)
+		.entry("routine", 815 as u64)
+		.entry("legacy", true);
+
+let reply: Result<XPCDictionary, XPCError> = XPCDictionary::new()
+		.extend(&LIST_SERVICES)
+		// Specify the domain type, or fall back on requester domain
+		.with_domain_type_or_default(Some(domain_type))
+		.entry_if_present("name", Some("com.apple.Spotlight"))
+		.pipe_routine_with_error_handling();
+```
+
+This looks a lot better than what we started with in the first part. I don't know about "idiomatic", but I can live with it. There remains more work to be done: for example, `pipe_routine_with_error_handling` should ideally be able to take a pipe as an argument instead of blindly using the bootstrap pipe, the `XPC*` structs have public pointer members, and so on. I hope to fix these things in the coming months as I get more free time.
+
+We shall move on, but feel free to look at [xpc-sys](https://github.com/mach-kernel/launchk/tree/master/xpc-sys) to see the end result.
+
+#### What's in a tool?
+
+With the XPC crate in hand we can start building the TUI. I used [Cursive](https://github.com/gyscos/cursive) because the view absractions were very easy to grok and get started with. Much of the visual layout was inspired by another TUI I use for managing Kubernetes clusters: [k9s](https://github.com/derailed/k9s). 
+
 -------
 
-SCRATCH
+SCRATCH SPACE
 
 [This presentation](https://saelo.github.io/presentations/bits_of_launchd.pdf) explains `launchd` messages have fields that work kind of like syscalls, where you give it a number that corresponds to the routine for some desired effect:
 
@@ -468,191 +510,3 @@ SCRATCH
 | 5 | PID (1 / process)             |
 | 6 | User domain for requestor UID |
 | 7 | Requestor domain              |
-
-In theory we should be able to copy this message, send it, then wait for an XPC response with information about `com.apple.Spotlight` as demo'd at the start of the post. It's finally time for the Rust part!
-
-#### Really, really going spelunking
-
-IDA Free:
-
-```
-± % launchctl dumpstate uid/501 | head -10                                                                                    !10437
-com.apple.xpc.launchd.domain.system = {
-	type = system
-	handle = 0
-	active count = 659
-	on-demand count = 0
-	service count = 370
-	active service count = 162
-	activity ratio = 0.44
-	maximum allowed shutdown time = 65 s
-	service stats = 0
-```
-
-Search for `on-demand count = %d`
-Xrefs
-Xrefs
-Giant switch spaghettini
-
-## Find the right message
-
-```
-lldb launchctl
-run dumpstate
-b xpc_pipe_routine_with_flags
-(lldb) p printf("%s",(char*)  xpc_copy_description($rsi))
-<dictionary: 0x100604410> { count = 5, transaction: 0, voucher = 0x0, contents =
-	"subsystem" => <uint64: 0x91e45079d2a3988d>: 3
-	"handle" => <uint64: 0x91e45079d2a3a88d>: 0
-	"shmem" => <shmem: 0x100604630>: 20971520 bytes (5121 pages)
-	"routine" => <uint64: 0x91e45079d297888d>: 834
-	"type" => <uint64: 0x91e45079d2a3b88d>: 1
-expr void * $my_shmem = ((void *) xpc_dictionary_get_value($rsi, "shmem"));
-```
-## Continue until you see this in your frame:
-
-```
-frame #0: 0x000000010000a25f launchctl`___lldb_unnamed_symbol62$$launchctl + 331
-launchctl`___lldb_unnamed_symbol62$$launchctl:
-->  0x10000a25f <+331>: movq   %r15, %rdi
-    0x10000a262 <+334>: movq   %rax, %rdx
-    0x10000a265 <+337>: callq  0x10000ddae               ; symbol stub for: fwrite
-    0x10000a26a <+342>: movq   (%rbx), %rdi
-expr void * $my_region = 0; 
-expr size_t $my_shsize = (size_t) xpc_shmem_map($my_shmem, &$my_region);
-(lldb) p $my_shsize
-(size_t) $my_shsize = 20971520
-(lldb) mem read $my_region $my_region+250
-0x103800000: 63 6f 6d 2e 61 70 70 6c 65 2e 78 70 63 2e 6c 61  com.apple.xpc.la
-0x103800010: 75 6e 63 68 64 2e 64 6f 6d 61 69 6e 2e 73 79 73  unchd.domain.sys
-0x103800020: 74 65 6d 20 3d 20 7b 0a 09 74 79 70 65 20 3d 20  tem = {..type =
-0x103800030: 73 79 73 74 65 6d 0a 09 68 61 6e 64 6c 65 20 3d  system..handle =
-0x103800040: 20 30 0a 09 61 63 74 69 76 65 20 63 6f 75 6e 74   0..active count
-0x103800050: 20 3d 20 35 38 33 0a 09 6f 6e 2d 64 65 6d 61 6e   = 583..on-deman
-0x103800060: 64 20 63 6f 75 6e 74 20 3d 20 30 0a 09 73 65 72  d count = 0..ser
-0x103800070: 76 69 63 65 20 63 6f 75 6e 74 20 3d 20 33 36 39  vice count = 369
-0x103800080: 0a 09 61 63 74 69 76 65 20 73 65 72 76 69 63 65  ..active service
-0x103800090: 20 63 6f 75 6e 74 20 3d 20 31 35 30 0a 09 61 63   count = 150..ac
-0x1038000a0: 74 69 76 69 74 79 20 72 61 74 69 6f 20 3d 20 30  tivity ratio = 0
-0x1038000b0: 2e 34 31 0a 09 6d 61 78 69 6d 75 6d 20 61 6c 6c  .41..maximum all
-0x1038000c0: 6f 77 65 64 20 73 68 75 74 64 6f 77 6e 20 74 69  owed shutdown ti
-0x1038000d0: 6d 65 20 3d 20 36 35 20 73 0a 09 73 65 72 76 69  me = 65 s..servi
-0x1038000e0: 63 65 20 73 74 61 74 73 20 3d 20 30 0a 09 63 72  ce stats = 0..cr
-0x1038000f0: 65 61 74 6f 72 20 3d 20 6c 61                    eator = la
-```
-
-Found the routine matchup in the launchd binary:
-
-```
-1000256c8          if (rbx_1 == 0x22)
-1000256c8              var_478 = nullptr
-1000256d3              r13_1 = 0x7d
-1000256d9              if (*data_10005a750 == r12_1)
-1000256f1                  r13_1 = 0x16
-1000256f7                  if (_xpc_dictionary_expects_reply(arg3) != 0)
-100025724                      uint32_t rax_94 = *(*(r12_1 + 0x60) + 0x68)(r12_1, 4, 0, *(r12_1 + 0x68), data_10005b6e0, 0, 0)
-100025727                      int64_t r14_8
-100025727                      if (rax_94 != 0)
-100025740                          sub_100022477(r12_1, data_10005b6e0, rax_94)
-100025745                          r14_8 = 0
-```
-
-Assuming this message sent for `dumpstate`:
-
-```
-<dictionary: 0x100205620> { count = 5, transaction: 0, voucher = 0x0, contents =
-	"subsystem" => <uint64: 0x920e46233afc7be9>: 3
-	"handle" => <uint64: 0x920e46233afc4be9>: 0
-	"shmem" => <shmem: 0x100205470>: 20971520 bytes (5121 pages)
-	"routine" => <uint64: 0x920e46233ac86be9>: 834
-	"type" => <uint64: 0x920e46233afc5be9>: 1
-```
-
-- The `834` corresponds to the `0x22`!
-
-Caller from this method goes up to a function that looks like this:
-
-```
-int64_t sub_10002487b()
-
-10002489b  *data_10005a750 = sub_100022e1c(data_10005a130, 0, 0, nullptr, 0, data_10005a820)
-1000248ae  sub_1000384e8(3, sub_100024920)
-1000248bf  sub_1000384e8(5, sub_1000283c4)
-1000248d0  sub_1000384e8(7, sub_100028af8)
-1000248e1  sub_100038628(sub_10003d56f, 0x830)
-1000248f2  sub_100038628(sub_10003d5dc, 0x2c)
-10002490c  int64_t rax_2 = _host_set_special_port(zx.q(_mach_host_self()), 0x16, zx.q(*data_10005a768), data_10005a768)
-100024911  if (rax_2.d != 0)
-100024919      rax_2 = sub_10003f04a(rax_2.d)
-100024916  return rax_2
-
-```
-
-`3,5,7` subroutines?
-
-
-#### Figuring out the EIO
-
-- b `_xpc_pipe_routine` in the Rust program
-	 - xpc_get_type
-	 - mig_get_reply_port
-	 - thread_get_special_reply_port
-	 - _xpc_pipe_pack_message
-	 - _xpc_serializer_get_mach_message_header
-	 - voucher_mach_msg_set
-	 - _xpc_serializer_get_mach_message_length
-	   - 176, so it gets serialized
-	 - _xpc_pipe_mach_msg
-	   - 0, so pipe OK?
-	 - 
-
-##### FFI Plumbing
-
-[bindgen](https://rust-lang.github.io/rust-bindgen/) can take C headers and generate Rust bindings. According to the manual (and a friend), the bindings should best go in their own crate. Our project setup is going to be a Rust workspace with two packages: `launchk` and `xpc-bindgen`.
-
-The docs recommend making a `wrapper.h` file that imports the desired headers (which are then used by bindgen). Crate [xcrun](https://crates.io/crates/xcrun) has some nice sugar for getting macOS SDK paths, so instead we can reference `xpc.h` directly in our `build.rs`:
-
-```rust
-static MACOS_INCLUDE_PATH: &str = "/usr/include";
-
-fn main() {
-    let sdk_path = xcrun::find_sdk(SDK::macOS(None))
-        .and_then(|pb| pb.to_str().map(String::from))
-        .and_then(|p| p.strip_suffix("\n").map(String::from))
-        .expect("macOS SDK Required");
-
-		// xpc methods
-		let xpc_path = format!("{}{}/xpc/xpc.h", sdk_path, MACOS_INCLUDE_PATH);
-		// bootstrap_port
-    let bootstrap_path = format!("{}{}/bootstrap.h", sdk_path, MACOS_INCLUDE_PATH);
-
-    let bindings = bindgen::Builder::default()
-        .header(xpc_path)
-        .header(bootstrap_path)
-        .parse_callbacks(Box::new(bindgen::CargoCallbacks))
-        .generate()
-        .expect("Unable to generate bindings");
-
-    let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
-    bindings
-        .write_to_file(out_path.join("bindings.rs"))
-        .expect("Couldn't write bindings!");
-}
-```
-
-`lib.rs` should only need:
-
-```rust
-include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
-```
-
-In our other crate's `Cargo.toml` we add it as a dependency:
-
-```
-xpc-bindgen = { path="../xpc-bindgen" }
-```
-
-If you did everything correctly, you should now have all of the xpc symbols available in Rust:
-
-![](https://i.imgur.com/gA0ObCLl.png)
-
