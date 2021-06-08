@@ -169,7 +169,7 @@ PS: This procedure was used to dump several launchctl commands I wanted to use i
 
 Answering those questions was the first significant hurdle. This is broad and detailed topic, so I will do my best to summarize as needed. To begin with terminology: XPC and Mach ports are both used for IPC. XPC is implemented atop Mach ports and provides a nice high level connections API ([`NSXPCConnection`](https://developer.apple.com/documentation/foundation/nsxpcconnection?language=objc)). launchd can also start XPC services on-demand (lazily, when messages are sent to that service) and spin them down if the system experiences load and the service is idle. It's recommended (for convenience, security) to use XPC if possible. And, as we saw above in the `XPC Objects` API docs, `xpc_object_t` can be a reference to an array, dictonary, string, etc.
 
-On macOS, creating a new UNIX process spawns a new Mach task with a thread. A task is an execution context for one or more threads, most importantly providing paged & protected virtual memory, and access to other system resources via Mach ports. Ports are handles to kernel-managed secure IPC data structures (usually a message queue or synchronization primitive). The kernel enforces port access through rights: a send right allows you to queue a message, a receive right allows you to dequeue a message. A port has a single receiver (only one task may hold a receive right), but many tasks may hold send rights for the same port. A port is analogous to a UNIX pipe or a unidirectional channel.
+On macOS, creating a process spawns a new Mach task with a thread. A task is an execution context for one or more threads, most importantly providing paged & protected virtual memory, and access to other system resources via Mach ports. Ports are handles to kernel-managed secure IPC data structures (usually a message queue or synchronization primitive). The kernel enforces port access through rights: a send right allows you to queue a message, a receive right allows you to dequeue a message. A port has a single receiver (only one task may hold a receive right), but many tasks may hold send rights for the same port. A port is analogous to a UNIX pipe or a unidirectional channel.
 
 Some of the special ports a new task has send rights to:
 
@@ -324,7 +324,7 @@ if err == 0 {
 
 #### Trying to make it better
 
-The goal (as I understand it) is to make an API for safe _usages_ of the bindings. A friend of mine and [Jeff Hiner's](https://medium.com/dwelo-r-d/wrapping-unsafe-c-libraries-in-rust-d75aeb283c65) post have invaluable resources (which I will quote to help me). I still have a lot of work to do on FFI etiquette! The first step as suggested by my friend was to make a `*-sys` crate for the bindings: to 
+The goal (as I understand it) is to make an API for safe _usages_ of the bindings. Advice from a friend of mine, and [Jeff Hiner's](https://medium.com/dwelo-r-d/wrapping-unsafe-c-libraries-in-rust-d75aeb283c65) post have invaluable resources. I still have a lot of work to do on FFI etiquette! It was suggested to me to move all the bindings to a `*-sys` crate, so I started with that.
 
 Everything revolves around `xpc_object_t`. I made a struct around it and `xpc_type_t` (get with `xpc_get_type`), to make it more convenient to check whether or not to call `xpc_int64_get_value` vs `xpc_uint64_get_value`, etc. We will talk about `Send` and `Sync` in a little bit.
 
@@ -508,10 +508,10 @@ Past this point the rest of the challenges were related to `launchd`. For exampl
 
 ![](https://i.imgur.com/UApPbOpm.png)
 
-Similarly, it would be nice to filter out services that are enabled and disabled. `launchctl dumpstate` includes this information, so I thought it would be easy to do the same as before (grab the info out of an XPC dictionary). The dumpstate endpoint takes a shmem box, inside it? A giant string:
+Similarly, it would be nice to filter out services that are enabled and disabled. `launchctl dumpstate` includes this information, so I thought it would be easy to do the same as before (grab the info out of an XPC dictionary). The dumpstate endpoint takes an [XPC shmem](https://developer.apple.com/documentation/xpc/1505369-xpc_shmem_map?language=objc) object that will be populated with the reply after the call. It took me a little while to understand how to work with shmems, only to finally look inside and find: a giant string. The same one you see when running `launchctl list`. Fun!
 
 ```
-b xpc_pipe_routine_with_flags
+(lldb) b xpc_pipe_routine_with_flags
 (lldb) p printf("%s",(char*)  xpc_copy_description($rsi))
 <dictionary: 0x100604410> { count = 5, transaction: 0, voucher = 0x0, contents =
 	"subsystem" => <uint64: 0x91e45079d2a3988d>: 3
@@ -519,9 +519,9 @@ b xpc_pipe_routine_with_flags
 	"shmem" => <shmem: 0x100604630>: 20971520 bytes (5121 pages)
 	"routine" => <uint64: 0x91e45079d297888d>: 834
 	"type" => <uint64: 0x91e45079d2a3b88d>: 1
-expr void * $my_shmem = ((void *) xpc_dictionary_get_value($rsi, "shmem"));
-expr void * $my_region = 0; 
-expr size_t $my_shsize = (size_t) xpc_shmem_map($my_shmem, &$my_region);
+(lldb) expr void * $my_shmem = ((void *) xpc_dictionary_get_value($rsi, "shmem"));
+(lldb) expr void * $my_region = 0; 
+(lldb) expr size_t $my_shsize = (size_t) xpc_shmem_map($my_shmem, &$my_region);
 (lldb) p $my_shsize
 (size_t) $my_shsize = 20971520
 (lldb) mem read $my_region $my_region+250
@@ -533,8 +533,14 @@ expr size_t $my_shsize = (size_t) xpc_shmem_map($my_shmem, &$my_region);
 0x103800050: 20 3d 20 35 38 33 0a 09 6f 6e 2d 64 65 6d 61 6e   = 583..on-deman
 ```
 
-Unsure if there's a safe and easy way to parse this, I threw it in `$PAGER` for now. Other weirdness has to do with `xpc_pipe_routine` and its errors. My Catalina Mac shows info errors but I don't see them at all on Big Sur. An example from trying to `reload` Redis:
+Some other XPC endpoints (`dumpjpstate`) take UNIX fds and are used in a similar manner. Not really knowing how to safely parse the string, or if I can get structured data out in any other way, I decided to forward the output to a `$PAGER`. Most if not all other requests have responses with useful keys inside an XPC dictionary, so this is far from a complaint! :)
+
+Other 'weirdness' circles around error semantics. For example, on my Catalina Mac, I get the following err invoking `xpc_pipe_routine` (the dialog calls `xpc_strerror` for human-readable messages) as a part of the `reload` command:
 
 ![](https://i.imgur.com/wthF2Chm.png)
 
+On Big Sur, there is no err response unless the failure is critical. I wonder if it's configurable. From here on out it was just feature work: I tried to focus on stuff I wanted like search and filtering. I made some TUI components, a `TableView` out of a [`SelectView`](https://docs.rs/cursive/0.8.2/cursive/views/struct.SelectView.html), and the little `[sguadl]` filter inside the omnibox. 
 
+#### A great way to spend a few months
+
+At work, most of my day is spent on web services. My C is terrible; I live for the nursery. To have gotten to a place where everything works feels great! And fights with the borrow checker were all good opportunities to learn how to write better code. I mean it: I am not great at paying attention. It feels so much more accessible to get build errors instead of undefined behavior that can go unnoticed. And honestly, with stuff in `std::sync` you don't have to be a genius to attempt a quick fix. Thanks very much to the work done by others in links scattered throughout this post, it made this possible for me to try on my own! I hope to keep rhythm with learning to write better Rust code. There is one resounding message, though: the hype is real! :)
