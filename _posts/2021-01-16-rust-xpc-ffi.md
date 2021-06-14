@@ -326,7 +326,7 @@ if err == 0 {
 
 The goal (as I understand it) is to make an API for safe _usages_ of the bindings. Advice from a friend of mine, and [Jeff Hiner's](https://medium.com/dwelo-r-d/wrapping-unsafe-c-libraries-in-rust-d75aeb283c65) post have invaluable resources. I still have a lot of work to do on FFI etiquette! It was suggested to me to move all the bindings to a `*-sys` crate, so I started with that.
 
-Everything revolves around `xpc_object_t`. I made a struct around it and `xpc_type_t` (get with `xpc_get_type`), to make it more convenient to check whether or not to call `xpc_int64_get_value` vs `xpc_uint64_get_value`, etc. We will talk about `Send` and `Sync` in a little bit.
+Everything revolves around `xpc_object_t`. I made a struct around it and `xpc_type_t` (get with `xpc_get_type`), to make it more convenient to check whether or not to call `xpc_int64_get_value` vs `xpc_uint64_get_value`, etc.
 
 ```rust
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -352,7 +352,7 @@ impl From<i64> for XPCObject {
 }
 ```
 
-We also want to be able to get values out of the XPC Objects. We check that the pointer is indeed an `Int64`, and only call the function if `check_xpc_type` succeeds (the function returns ``Result<(), XPCError>`, the `?` returns `Err(XPCError)` if there is a mismatch).
+We also want to be able to get values out of the XPC Objects. We check that the pointer is indeed an XPC int64, and only call the function if `check_xpc_type` succeeds (the function returns `Result<(), XPCError>`, the `?` returns `Err(XPCError)` if there is a mismatch).
 
 ```rust
 pub trait TryXPCValue<Out> {
@@ -390,7 +390,7 @@ fn xpc_to_rs_with_wrong_type() {
 }
 ```
 
-At first I marked my structs `Send` and `Sync` for convenience. There are criteria (quoting Jeff's post):
+At first I marked the structs `Send` and `Sync` for convenience. There are criteria (quoting Jeff's post):
 
 > You can mark your struct Send if the C code dereferencing the pointer never uses thread-local storage or thread-local locking. This happens to be true for many libraries.
 
@@ -400,7 +400,7 @@ At first I marked my structs `Send` and `Sync` for convenience. There are criter
 
 Herein lies a brutal bug that took me forever to figure out. [`xpc_dictionary_apply`](https://developer.apple.com/documentation/xpc/1505404-xpc_dictionary_apply?language=objc) takes an `xpc_dictionary_applier_t`, which is an Objective-C block (a big thanks to [block](https://crates.io/crates/block)!) that is called for every k-v pair in the dictionary. I used this in order to try to go from an XPC dictionary to `HashMap<String, XPCObject>`. 
 
-I kept segfaulting and could not figure out why. After all, I could log the k-vs from the block! It was frustrating and took days, until I discovered [xpc_retain](https://developer.apple.com/documentation/xpc/1505873-xpc_retain) and [xpc_release](https://developer.apple.com/documentation/xpc/1505851-xpc_release) in Apple's docs. The XPC runtime can retain and free objects. Adding a call to `xpc_retain` in the block stopped the segfaulting!
+I kept segfaulting and could not figure out why. After all, I could log the k-vs from the block! It was frustrating and took days, until I discovered [xpc_retain](https://developer.apple.com/documentation/xpc/1505873-xpc_retain) and [xpc_release](https://developer.apple.com/documentation/xpc/1505851-xpc_release) in Apple's docs. The XPC runtime can retain and free objects (`man xpc_object`). Adding a call to `xpc_retain` in the block stopped the segfaulting!
 
 ```rust
 let map: Arc<RefCell<HashMap<String, Arc<XPCObject>>>> =
@@ -423,7 +423,13 @@ let block = block.copy();
 let ok = unsafe { xpc_dictionary_apply(object.as_ptr(), &*block as *const _ as *mut _) };
 ```
 
-This is an important moment: things are happening in the system outside of whatever you're doing in lexical eyeshot that merely looks hunky dory. This means that XPCObject isn't always safe to use, because we can't always safely dereference `xpc_object_t`. It is also bad to have calls to `xpc_retain` littered around the code where their purpose isn't obvious, [something I've only recently](https://github.com/mach-kernel/launchk/pull/13) fixed by calling `xpc_retain` every time an `XPCObject` is made. Like this, I can get a better guarantee about the underlying XPCObject living until Rust drops it, where we can add an `xpc_release` call:
+At first, I started to try to "fix" this by littering calls to `xpc_retain` around wherever they stopped crashes. However, this is a bad idea because it means that `XPCObject` is not always safe to use. Instead, constructing an `XPCObject` will call `xpc_retain`
+
+
+Unfortunately, this means that XPCObject isn't always safe to use, because we can't always safely dereference `xpc_object_t`. Instead
+
+
+It is also bad to have calls to `xpc_retain` littered around the code where their purpose isn't obvious, [something I've only recently](https://github.com/mach-kernel/launchk/pull/13) fixed by calling `xpc_retain` every time an `XPCObject` is made. Like this, I can get a better guarantee about the underlying XPCObject living until Rust drops it, where we can add an `xpc_release` call:
 
 ```rust
 impl Drop for XPCObject {
@@ -484,7 +490,7 @@ We shall move on, but feel free to look at [xpc-sys](https://github.com/mach-ker
 
 #### Making a TUI
 
-I used [Cursive](https://github.com/gyscos/cursive) because the view absractions were very easy to grok and get started with. Much of the visual layout was inspired by another TUI I use for managing Kubernetes clusters: [k9s](https://github.com/derailed/k9s). The omnibox-style interface is simple to use and appears to be straightforward to implement: we can make a component for an omnibox then have views that subscribe to its events implement an `OmniboxSubscriber` trait:
+I used [Cursive](https://github.com/gyscos/cursive) because the view absractions were very easy to grok and get started with. Much of the visual layout was inspired by another TUI I use for managing Kubernetes clusters: [k9s](https://github.com/derailed/k9s). I like the omnibox-style interface. It seems reasonable to encode all of the tricky-key-combos bits into one component, then have it send semantically meaningful updates (e.g. a command was submitted). `View`s can implement `OmniboxSubscriber`, and `OmniboxSubscribedView` is kind of a hack so I can go from `&mut dyn View` to `&mut OmniboxSubscribedView` (to have `on_omnibox` available):
 
 ```rust
 pub trait OmniboxSubscriber: View {
@@ -508,7 +514,7 @@ Past this point the rest of the challenges were related to `launchd`. For exampl
 
 ![](https://i.imgur.com/UApPbOpm.png)
 
-Similarly, it would be nice to filter out services that are enabled and disabled. `launchctl dumpstate` includes this information, so I thought it would be easy to do the same as before (grab the info out of an XPC dictionary). The dumpstate endpoint takes an [XPC shmem](https://developer.apple.com/documentation/xpc/1505369-xpc_shmem_map?language=objc) object that will be populated with the reply after the call. It took me a little while to understand how to work with shmems, only to finally look inside and find: a giant string. The same one you see when running `launchctl list`. Fun!
+Similarly, it would be nice to filter out services that are enabled and disabled. `launchctl dumpstate` includes this information, so I thought it would be easy to do the same as before (grab the info out of an XPC dictionary). The dumpstate endpoint takes an [XPC shmem](https://developer.apple.com/documentation/xpc/1505369-xpc_shmem_map?language=objc) object that will be populated with the reply after the call. It took me a little while to understand how to work with shmems, only to finally look inside and find: a giant string. The same one you see when running `launchctl dumpstate`. Fun!
 
 ```
 (lldb) b xpc_pipe_routine_with_flags
@@ -535,7 +541,7 @@ Similarly, it would be nice to filter out services that are enabled and disabled
 
 Some other XPC endpoints (`dumpjpstate`) take UNIX fds and are used in a similar manner. Not really knowing how to safely parse the string, or if I can get structured data out in any other way, I decided to forward the output to a `$PAGER`. Most if not all other requests have responses with useful keys inside an XPC dictionary, so this is far from a complaint! :)
 
-Other 'weirdness' circles around error semantics. For example, on my Catalina Mac, I get the following err invoking `xpc_pipe_routine` (the dialog calls `xpc_strerror` for human-readable messages) as a part of the `reload` command:
+Other 'weirdness' circles around error semantics. For example, on Catalina, I get the following err invoking `xpc_pipe_routine` (the dialog calls `xpc_strerror` for human-readable messages) as a part of the `reload` command:
 
 ![](https://i.imgur.com/wthF2Chm.png)
 
