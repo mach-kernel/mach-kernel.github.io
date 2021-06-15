@@ -28,6 +28,37 @@ body {
       font-weight: bold;
     }
   }
+
+  &-post {
+    p {
+      font-size: 0.95rem;
+
+      code {
+        background-color: #eeecf1;
+      }
+    }
+
+    .highlight pre {
+      border: 1px solid #c0c0c0;
+      overflow-x: scroll;
+      font-size: 0.8rem;
+      padding: 5px;
+
+      tab-size: 2;
+      -moz-tab-size: 2;
+    }
+
+    blockquote p {
+      background-color: #fff;
+      padding: 0 5px 0 5px;
+      // font-style: italic;
+      font-size: 0.8rem;
+      border-left: 4px solid $dstancu-accent;
+      border-right: 1px solid #c0c0c0;
+      border-bottom: 1px solid #c0c0c0;
+      border-top: 1px solid #c0c0c0;
+    }
+  }
 }
 
 @media (max-width: 40em) {
