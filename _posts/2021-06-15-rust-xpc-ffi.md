@@ -1,16 +1,19 @@
 ---
-title: "Baby's first Rust with extra steps (private APIs, launchd, and FFI)!"
+title: "Baby's first Rust with extra steps (XPC, launchd, and FFI)!"
 published: true
 layout: post
 categories: macos rust ffi xpc ncurses
-date: 2021-01-02T21:47:44-05:00
+date: 2021-06-15T09:47:15+0000
 ---
 
-A few months ago I [read a comment](https://news.ycombinator.com/item?id=2565458) on a HN post about GNOME/systemd (part of someone's "zomg systemd is ruining everything" campaign in a chatroom). I learned a cool tidbit of information: apparently systemd was inspired by Apple's launchd. Having subsequently fallen into a wiki-hole about init systems, I began to play with `launchctl` on my local machine. Turns out that launchd does some pretty cool things: the `*.plist` describing a job can do more than just specify its arguments! For example, the `QueueDirectories` key lets you spawn jobs when files are added to a directory (how useful!). I was oblivious to this having interacted with launchd the past years mostly via `brew services`.
+During an ongoing argument in a chatroom between some folks about how "zomg systemd is ruining everything", I decided to look at some init system history. I learned a cool tidbit of information from a HN comment[^1]: apparently systemd's design was inspired by Apple's launchd. Embarassingly, I knew little to nothing about launchd, even as a lifelong Mac user. I began to play with `launchctl` on my local machine. Turns out that launchd does some pretty cool things: the `*.plist` describing a job can do more than just specify its arguments. For example, the `QueueDirectories` key lets you spawn jobs when files are added to a directory (how useful!). I was oblivious to this having interacted with launchd the past years mostly via `brew services`. With the help of [soma-zone's LaunchControl](https://www.soma-zone.com/LaunchControl/) and [launchd.info](https://www.launchd.info/) companion site, I was able to fiddle and figure out what various plist keys did. 
 
-[soma-zone's LaunchControl](https://www.soma-zone.com/LaunchControl/) and [launchd.info](https://www.launchd.info/) companion site are great resources for learning about the supported plist keys and trying out changes quickly. I wondered if there was a similar tool that could run in a terminal: on Linux I've used [chkservice](https://github.com/linuxenko/chkservice) to debug things like a botched `pg_upgrade` (funny enough, brew [now helps](https://github.com/Homebrew/homebrew-core/pull/21244/files) you with this) across restarts and found it useful to leave in a tmux pane. Not having found a similar tool for macOS, and with the inertia one only has at 1 AM -- I thought "heeeeey, maybe we can make one!". It would also be a good excuse to learn Rust, [loved `n+1` years in a row](https://www.reddit.com/r/rust/comments/nksce4/) by the SO developer survey.
+[^1]: [https://news.ycombinator.com/item?id=2565458](https://news.ycombinator.com/item?id=2565458)
 
-Several months later I ended up with [launchk](https://github.com/mach-kernel/launchk). The rest of this post will go over: getting started, interfacing with `launchd`, a lot of macOS IPC bits, getting stuck, and a bunch of probably questionable Rust FFI stuff.
+I wondered if there was something similar to LaunchControl that could run in a terminal. I've used [chkservice](https://github.com/linuxenko/chkservice) on Linux, but there seems to be no macOS equivalent. I've been dying for an excuse to learn a little bit of Rust (loved `n+1` years in a row by the SO developer survey[^2]) -- so this was my chance. Several months later I ended up with [launchk](https://github.com/mach-kernel/launchk). The rest of this post will go over: getting started, interfacing with `launchd`, a lot of macOS IPC bits, getting stuck, and a bunch of probably questionable Rust FFI stuff.
+
+[^2]: [https://www.reddit.com/r/rust/comments/nksce4/](https://www.reddit.com/r/rust/comments/nksce4/)
+
 
 #### Hello world?
 
@@ -65,7 +68,11 @@ This looks to be what we want but there is a problem: the API is deprecated (and
 
 #### Surely there is a non-deprecated route
 
-After some more reading I learned that the new releases of launchd depend on Apple's closed-source `libxpc`. [Jonathan Levin's post](http://newosxbook.com/articles/jlaunchctl.html) outlines a method for reading XPC calls: we have to attach and break on `xpc_pipe_routine` from where we can subsequently inspect the messages being sent. [New hardened runtime requirements](https://lapcatsoftware.com/articles/debugging-mojave.html) look at codesign entitlements -- if there is no `get-task-allow`, SIP must be enabled or the debugger won't be able to attach:
+After some more reading I learned that the new releases of launchd depend on Apple's closed-source `libxpc`. Jonathan Levin's post[^3] outlines a method for reading XPC calls: we have to attach and break on `xpc_pipe_routine` from where we can subsequently inspect the messages being sent. New hardened runtime requirements[^4] look at codesign entitlements -- if there is no `get-task-allow`, SIP must be enabled or the debugger won't be able to attach:
+
+[^3]: [http://newosxbook.com/articles/jlaunchctl.html](http://newosxbook.com/articles/jlaunchctl.html)
+[^4]: [https://lapcatsoftware.com/articles/debugging-mojave.html](https://lapcatsoftware.com/articles/debugging-mojave.html)
+
 
 ```
 error: MachTask::TaskPortForProcessID task_for_pid failed: ::task_for_pid ( target_tport = 0x0103, pid = 66905, &task ) => err = 0x00000005 ((os/kern) failure)
@@ -80,7 +87,10 @@ _xpc_pipe_create_from_port
 _xpc_pipe_routine_with_flags
 ```
 
-Breaking on `xpc_pipe_routine_with_flags` succeeds! [x86_64 calling convention](https://github.com/cirosantilli/x86-assembly-cheat/blob/master/x86-64/calling-convention.md) in a nutshell: first 6 args go into `%rdi %rsi %rdx %rcx %r8 %r9`, and then on the stack (see link for various edge cases like varadic functions). From the `launjctl` post above, we can use `xpc_copy_description` to get human-readable strings re what is inside an XPC object. [Some searching](https://grep.app/search?q=xpc_pipe_routine_with_flags) also found us the function signature!
+Breaking on `xpc_pipe_routine_with_flags` succeeds! x86-64 calling convention[^5] in a nutshell: first 6 args go into `%rdi %rsi %rdx %rcx %r8 %r9`, and then on the stack in reverse order ?'?(see link for various edge cases like varadic functions). From the `launjctl` post above, we can use `xpc_copy_description` to get human-readable strings re what is inside an XPC object. Some searching[^6] also found us the function signature!
+
+[^5]: [https://github.com/cirosantilli/x86-assembly-cheat/blob/master/x86-64/calling-convention.md](https://github.com/cirosantilli/x86-assembly-cheat/blob/master/x86-64/calling-convention.md)
+[^6]: [https://grep.app/search?q=xpc_pipe_routine_with_flags](https://grep.app/search?q=xpc_pipe_routine_with_flags)
 
 ```c
 int xpc_pipe_routine_with_flags(xpc_pipe_t pipe, xpc_object_t request, xpc_object_t *reply, uint32_t flags);
@@ -147,7 +157,9 @@ Keep stepping if it's still null. Eventually it will point to an XPC object that
   }
 ```
 
-Looks like some of the same keys we saw from the `launch_msg` example! Better yet, we can manipulate `xpc_object_t` by importing `xpc.h` as described by [Apple's XPC Objects](https://developer.apple.com/documentation/xpc/xpc_objects?language=objc) documentation. For example, we can try to read the "ProgramArguments" key:
+Looks like some of the same keys we saw from the `launch_msg` example! Better yet, we can manipulate `xpc_object_t` by importing `xpc.h` as described by Apple's XPC Objects documentation[^7]. For example, we can try to read the "ProgramArguments" key:
+
+[^7]: [https://developer.apple.com/documentation/xpc/xpc_objects?language=objc](https://developer.apple.com/documentation/xpc/xpc_objects?language=objc)
 
 ```
 (lldb) p (void *) xpc_dictionary_get_dictionary(*((void**) $my_reply), "service");
@@ -165,9 +177,13 @@ We can create a dictionary with `xpc_dictionary_create` and populate it `xpc_dic
 
 PS: This procedure was used to dump several launchctl commands I wanted to use in `launchk`: [you can find them here](https://github.com/mach-kernel/launchk/blob/master/doc/launchctl_messages.md).
 
-#### macOS IPC
+#### macOS IPC [^8] [^9] [^10]
 
-Answering those questions was the first significant hurdle. This is broad and detailed topic, so I will do my best to summarize as needed. To begin with terminology: XPC and Mach ports are both used for IPC. XPC is implemented atop Mach ports and provides a nice high level connections API ([`NSXPCConnection`](https://developer.apple.com/documentation/foundation/nsxpcconnection?language=objc)). launchd can also start XPC services on-demand (lazily, when messages are sent to that service) and spin them down if the system experiences load and the service is idle. It's recommended (for convenience, security) to use XPC if possible. And, as we saw above in the `XPC Objects` API docs, `xpc_object_t` can be a reference to an array, dictonary, string, etc.
+[^8]: [https://docs.darlinghq.org/internals/macos-specifics/mach-ports.html](https://docs.darlinghq.org/internals/macos-specifics/mach-ports.html)
+[^9]: [https://developer.apple.com/library/archive/documentation/Darwin/Conceptual/KernelProgramming/Mach/Mach.html](https://developer.apple.com/library/archive/documentation/Darwin/Conceptual/KernelProgramming/Mach/Mach.html)
+[^10]: [https://fdiv.net/category/apple/mach-ports](https://fdiv.net/category/apple/mach-ports)
+
+Answering those questions was the first significant hurdle. This is broad and detailed topic, so I will do my best to summarize as needed. To begin with terminology: XPC and Mach ports are both used for IPC. XPC is implemented atop Mach ports and provides a nice high level connections API ([`NSXPCConnection`](https://developer.apple.com/documentation/foundation/nsxpcconnection?language=objc)). launchd can also start XPC services on-demand (lazily, when messages are sent to that service) and spin them down if the system experiences load and the service is idle. It's recommended (for convenience, security) to use XPC if possible. And, as we saw above in the XPC Objects API docs, `xpc_object_t` can be a reference to an array, dictonary, string, etc.
 
 On macOS, creating a process spawns a new Mach task with a thread. A task is an execution context for one or more threads, most importantly providing paged & protected virtual memory, and access to other system resources via Mach ports. Ports are handles to kernel-managed secure IPC data structures (usually a message queue or synchronization primitive). The kernel enforces port access through rights: a send right allows you to queue a message, a receive right allows you to dequeue a message. A port has a single receiver (only one task may hold a receive right), but many tasks may hold send rights for the same port. A port is analogous to a UNIX pipe or a unidirectional channel.
 
@@ -180,7 +196,7 @@ Some of the special ports a new task has send rights to:
 
 A task can only get a port by creating it or transfering send/recv rights to another task. To make things easier, in addition to its init duties, `launchd` also maintains a registry of names to Mach ports. A server can use the bootstrap port to register: `bootstrap_register(bootstrap_port, "com.foo.something", port_send)`, then subsequently another task can retrieve that send right via `bootstrap_look_up(bootstrap_port, "com.foo.something", &retrieved_send)`. To make things more confusing, `bootstrap_register` was deprecated requiring developers to implement the ["port swap dance"](https://stackoverflow.com/a/35447525/1516373) workaround: the parent task creates a new port and overrides the child task's bootstrap port, then the child task creates a new port and passes the send right to the parent, finally the parent sends the actual bootstrap port to the child (i.e. over the newly established communication channel) so it may set the bootstrap port back to its correct value. 
 
-So, back to the question: what's an XPC pipe? From the launchctl symbols we listed above, there is a `xpc_pipe_create_from_port`. Some online digging revealed headers with the function definition and example usages in [Chromium sandbox code](https://chromium.googlesource.com/experimental/chromium/src/+/refs/wip/bajones/webvr/sandbox/mac/pre_exec_delegate.cc). So, an XPC pipe can be made from a Mach port. I am unsure how to describe them: it looks to be a way to say "this Mach port can serde XPC objects"? At any rate, let's break on it:
+So, back to the question: what's an XPC pipe? From the launchctl symbols we listed above, there is a `xpc_pipe_create_from_port`. Some online digging revealed headers with the function definition and example usages in [Chromium sandbox code](https://chromium.googlesource.com/experimental/chromium/src/+/refs/wip/bajones/webvr/sandbox/mac/pre_exec_delegate.cc). So, an XPC pipe can be made from a Mach port. I am unsure how to describe them: it looks to be a way to say "this Mach port can serialize XPC objects"? At any rate, let's break on it:
 
 ```c
 xpc_pipe_t xpc_pipe_create_from_port(mach_port_t port, int flags);
@@ -245,7 +261,9 @@ There is more to be discussed regarding `xpc_pipe_routine` and MIG (edit: probab
 
 Our goal is to focus on getting our minimal C example into a Rust project. As a newcomer, [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=matklad.rust-analyzer) was tremendously helpful for discovering functions and API surface. Get Rust from [rustup](https://rustup.rs/). Afterwards, make a new directory, `cargo init`, then set up [bindgen](https://rust-lang.github.io/rust-bindgen/). Include the same headers as in the example C program in `wrapper.h` -- they are in the default search path and require no further setup (find where: `xcrun --show-sdk-path`). 
 
-Let's start by including the generated bindings and putting the [type aliases](https://doc.rust-lang.org/reference/items/type-aliases.html) (for the typedef) and function declarations into place:
+Let's start by including the generated bindings and putting the type aliases[^11] (for the typedef) and function declarations into place:
+
+[^11]: [https://doc.rust-lang.org/reference/items/type-aliases.html](https://doc.rust-lang.org/reference/items/type-aliases.html)
 
 ```rust
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
@@ -282,12 +300,15 @@ let bootstrap_pipe: xpc_pipe_t = unsafe {
 // 		count: size_t,
 // ) -> xpc_object_t;
 
+// Make an empty dictionary (no keys, no values)
 let list_request: xpc_object_t = unsafe {
     xpc_dictionary_create(null(), null_mut(), 0)
 };
 ```
 
-All FFI functions are unsafe: Rust can't check for memory safety issues in external libs. We need to use [unsafe Rust](https://doc.rust-lang.org/nomicon/what-unsafe-does.html) to call C functions and dereference raw pointers. `null()` and `null_mut()` give us null `*const T` and `*mut T` pointers respectively. Now, to populate the dictionary:
+All FFI functions are unsafe: Rust can't check for memory safety issues in external libs. We need to use unsafe Rust[^12] to call C functions and dereference raw pointers. `null()` and `null_mut()` give us null `*const T` and `*mut T` pointers respectively. Now, to populate the dictionary:
+
+[^12]: [https://doc.rust-lang.org/nomicon/what-unsafe-does.html](https://doc.rust-lang.org/nomicon/what-unsafe-does.html)
 
 ```rust
 // Make me crash by changing to "subsystem\0"
@@ -299,7 +320,9 @@ unsafe {
 }
 ```
 
-There is some extra work to go from a string [slice](https://doc.rust-lang.org/book/ch04-03-slices.html) to a [`std::ffi::CString`](https://doc.rust-lang.org/std/ffi/struct.CString.html). `new()` automatically null-terminates the string and checks to see that there are no null-bytes in the payload, so it returns a `Result<CString, NulError>` that must explicitly be handled. Afterwards, we can use `as_ptr()` on the CString to get the `const *c_char` expected by `xpc_dictionary_set_uint64`.
+There is some extra work to go from a string slice[^13] to a [`std::ffi::CString`](https://doc.rust-lang.org/std/ffi/struct.CString.html). `new()` automatically null-terminates the string and checks to see that there are no null-bytes in the payload, so it returns a `Result<CString, NulError>` that must explicitly be handled. Afterwards, we can use `as_ptr()` on the CString to get the `const *c_char` expected by `xpc_dictionary_set_uint64`.
+
+[^13]: [https://doc.rust-lang.org/book/ch04-03-slices.html](https://doc.rust-lang.org/book/ch04-03-slices.html)
 
 Once the dictionary is filled we can attempt the XPC call:
 
@@ -324,7 +347,9 @@ if err == 0 {
 
 #### Trying to make it better
 
-The goal (as I understand it) is to make an API for safe _usages_ of the bindings. Advice from a friend of mine, and [Jeff Hiner's](https://medium.com/dwelo-r-d/wrapping-unsafe-c-libraries-in-rust-d75aeb283c65) post have invaluable resources. I still have a lot of work to do on FFI etiquette! It was suggested to me to move all the bindings to a `*-sys` crate, so I started with that.
+The goal (as I understand it) is to make an API for safe _usages_ of the bindings. Advice from a friend of mine, and Jeff Hiner's post[^14] have invaluable resources. I still have a lot of work to do on FFI etiquette! It was suggested to me to move all the bindings to a `*-sys` crate, so I started with that.
+
+[^14]: [https://medium.com/dwelo-r-d/wrapping-unsafe-c-libraries-in-rust-d75aeb283c65](https://medium.com/dwelo-r-d/wrapping-unsafe-c-libraries-in-rust-d75aeb283c65)
 
 Everything revolves around `xpc_object_t`. I made a struct around it and `xpc_type_t` (get with `xpc_get_type`) to make it more convenient to check whether or not to call `xpc_int64_get_value` vs `xpc_uint64_get_value`, etc.
 
@@ -398,9 +423,14 @@ At first I marked the structs `Send` and `Sync` for convenience. There are crite
 
 `xpc_type_t` seems safe enough: `xpc_get_type` returns stable pointers that can be checked against externs we can import from our bindings (e.g., this is _the_ `xpc_type_t` for arrays: `(&_xpc_type_array as *const _xpc_type_s)`). `xpc_object_t` is a pointer to a heap allocated value: an integer or string are easier to reason about, but what happens to things like XPC dictionaries?
 
-Herein lies a brutal segfault that took a while to figure out. [`xpc_dictionary_apply`](https://developer.apple.com/documentation/xpc/1505404-xpc_dictionary_apply?language=objc) takes an `xpc_dictionary_applier_t`, which is an Objective-C block (a big thanks to [block](https://crates.io/crates/block)!) that is called for every k-v pair in the dictionary. I used this in order to try to go from an XPC dictionary to `HashMap<String, XPCObject>`. 
+Herein lies a brutal segfault that took a while to figure out. [`xpc_dictionary_apply`](https://developer.apple.com/documentation/xpc/1505404-xpc_dictionary_apply?language=objc) takes an `xpc_dictionary_applier_t`, which is an Objective-C block (a big thanks to the block[^15] crate!) that is called for every k-v pair in the dictionary. I used this in order to try to go from an XPC dictionary to `HashMap<String, XPCObject>`. 
 
-The `xpc_dictionary_apply` [manpage](https://www.manpagez.com/man/3/xpc_dictionary_create/) made mention of retain and release, which led to these two functions: [xpc_retain](https://developer.apple.com/documentation/xpc/1505873-xpc_retain), [xpc_release](https://developer.apple.com/documentation/xpc/1505851-xpc_release). They increase/decrease the reference count of the XPC object (in a manner similar to Rust's Arc). I tested calling `xpc_retain` before inserting into the map, thinking the value did not live long enough:
+[^15]: [https://crates.io/crates/block](https://crates.io/crates/block)
+
+The `xpc_dictionary_apply` and related manpages[^16] [^17] made mention of retain and release, which led to these two functions: [xpc_retain](https://developer.apple.com/documentation/xpc/1505873-xpc_retain), [xpc_release](https://developer.apple.com/documentation/xpc/1505851-xpc_release). They increase/decrease the reference count of the XPC object (in a manner similar to Rust's Arc). I tested calling `xpc_retain` before inserting into the map, thinking the value did not live long enough:
+
+[^16]: [https://www.manpagez.com/man/3/xpc_dictionary_create/](https://www.manpagez.com/man/3/xpc_dictionary_create/)
+[^17]: [https://www.manpagez.com/man/3/xpc_object/](https://www.manpagez.com/man/3/xpc_object/)
 
 ```rust
 let block = ConcreteBlock::new(move |key: *const c_char, value: xpc_object_t| {
@@ -435,7 +465,9 @@ All felt very motivating but missed the mark. I [littered unsafe code](https://g
 
 ![](https://i.imgur.com/3ywkEFYh.png)
 
-There's a memory leak, or better yet, about 5k new leaks every 10 seconds. The solution was to be as explicit as possible about which ways XPC object pointers make it into `XPCObject`. It is probably not wise to play with reference counts for objects we did not make -- so the new strategy was to use [`xpc_copy`](https://developer.apple.com/documentation/xpc/1505584-xpc_copy?language=objc) to get deep copies of XPC objects we wanted to place in Rust structs. A second way in would be via `xpc_etc_create` functions. Knowing where these places are allows us to do some logging (ps: thanks for [ref count offsets](https://www.fortinet.com/blog/threat-research/a-look-into-xpc-internals--reverse-engineering-the-xpc-objects) Fortinet):
+There's a memory leak, or better yet, about 5k new leaks every 10 seconds. The solution was to be as explicit as possible about which ways XPC object pointers make it into `XPCObject`. It is probably not wise to play with reference counts for objects we did not make -- so the new strategy was to use [`xpc_copy`](https://developer.apple.com/documentation/xpc/1505584-xpc_copy?language=objc) to get deep copies of XPC objects we wanted to place in Rust structs. A second way in would be via `xpc_etc_create` functions. Knowing where these places are allows us to do some logging (ps: thanks for ref count offsets Fortinet [^18]):
+
+[^18]: [https://www.fortinet.com/blog/threat-research/a-look-into-xpc-internals--reverse-engineering-the-xpc-objects](https://www.fortinet.com/blog/threat-research/a-look-into-xpc-internals--reverse-engineering-the-xpc-objects)
 
 ```
 [INFO  xpc_sys::objects::xpc_object] XPCObject new (0x7f804f60ea10, string, refs 1 xrefs 0)
@@ -528,7 +560,9 @@ pub trait Subscribable: View + OmniboxSubscriber {
 
 I chose a [`LinearLayout`](https://docs.rs/cursive/0.8.1/cursive/views/struct.LinearLayout.html) as my root container. Only one child can be focused at a time in a `LinearLayout` which seems reasonable: we invoke `on_omnibox` for only that child. [tokio](https://github.com/tokio-rs/tokio) futures with an interval were used to keep polling the XPC endpoint that returned the list of services (so we can see things as they pop on or off).
 
-Past this point the rest of the challenges were related to `launchd`. For example, the `type` key in the XPC message changes with the desired target domain for a given service. The `type` key is required when both starting and stopping a service. [bits of launchd](https://saelo.github.io/presentations/bits_of_launchd.pdf) was useful and helped clarify what domains each of the types mapped to. To find services, it was easy to query for every `type` key and return the first match. However, when they are not running, how do we know which one to choose? I was not able to figure this out and settled on a prompt:
+Past this point the rest of the challenges were related to `launchd`. For example, the `type` key in the XPC message changes with the desired target domain for a given service. The `type` key is required when both starting and stopping a service. bits of launchd[^19] was useful and helped clarify what domains each of the types mapped to. To find services, it was easy to query for every `type` key and return the first match. However, when they are not running, how do we know which one to choose? I was not able to figure this out and settled on a prompt:
+
+[^19]: [https://saelo.github.io/presentations/bits_of_launchd.pdf](https://saelo.github.io/presentations/bits_of_launchd.pdf)
 
 ![](https://i.imgur.com/UApPbOpm.png)
 

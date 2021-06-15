@@ -32,6 +32,10 @@ body {
   &-post {
     p {
       font-size: 0.95rem;
+
+      code {
+        background-color: #eeecf1;
+      }
     }
 
     .highlight pre {
