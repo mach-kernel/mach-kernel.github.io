@@ -326,7 +326,7 @@ if err == 0 {
 
 The goal (as I understand it) is to make an API for safe _usages_ of the bindings. Advice from a friend of mine, and [Jeff Hiner's](https://medium.com/dwelo-r-d/wrapping-unsafe-c-libraries-in-rust-d75aeb283c65) post have invaluable resources. I still have a lot of work to do on FFI etiquette! It was suggested to me to move all the bindings to a `*-sys` crate, so I started with that.
 
-Everything revolves around `xpc_object_t`. I made a struct around it and `xpc_type_t` (get with `xpc_get_type`), to make it more convenient to check whether or not to call `xpc_int64_get_value` vs `xpc_uint64_get_value`, etc.
+Everything revolves around `xpc_object_t`. I made a struct around it and `xpc_type_t` (get with `xpc_get_type`) to make it more convenient to check whether or not to call `xpc_int64_get_value` vs `xpc_uint64_get_value`, etc.
 
 ```rust
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -398,38 +398,29 @@ At first I marked the structs `Send` and `Sync` for convenience. There are crite
 
 `xpc_type_t` seems safe enough: `xpc_get_type` returns stable pointers that can be checked against externs we can import from our bindings (e.g., this is _the_ `xpc_type_t` for arrays: `(&_xpc_type_array as *const _xpc_type_s)`). `xpc_object_t` is a pointer to a heap allocated value: an integer or string are easier to reason about, but what happens to things like XPC dictionaries?
 
-Herein lies a brutal bug that took me forever to figure out. [`xpc_dictionary_apply`](https://developer.apple.com/documentation/xpc/1505404-xpc_dictionary_apply?language=objc) takes an `xpc_dictionary_applier_t`, which is an Objective-C block (a big thanks to [block](https://crates.io/crates/block)!) that is called for every k-v pair in the dictionary. I used this in order to try to go from an XPC dictionary to `HashMap<String, XPCObject>`. 
+Herein lies a brutal segfault that took a while to figure out. [`xpc_dictionary_apply`](https://developer.apple.com/documentation/xpc/1505404-xpc_dictionary_apply?language=objc) takes an `xpc_dictionary_applier_t`, which is an Objective-C block (a big thanks to [block](https://crates.io/crates/block)!) that is called for every k-v pair in the dictionary. I used this in order to try to go from an XPC dictionary to `HashMap<String, XPCObject>`. 
 
-I kept segfaulting and could not figure out why. After all, I could log the k-vs from the block! It was frustrating and took days, until I discovered [xpc_retain](https://developer.apple.com/documentation/xpc/1505873-xpc_retain) and [xpc_release](https://developer.apple.com/documentation/xpc/1505851-xpc_release) in Apple's docs. The XPC runtime can retain and free objects (`man xpc_object`). Adding a call to `xpc_retain` in the block stopped the segfaulting!
+The `xpc_dictionary_apply` [manpage](https://www.manpagez.com/man/3/xpc_dictionary_create/) made mention of retain and release, which led to these two functions: [xpc_retain](https://developer.apple.com/documentation/xpc/1505873-xpc_retain), [xpc_release](https://developer.apple.com/documentation/xpc/1505851-xpc_release). They increase/decrease the reference count of the XPC object (in a manner similar to Rust's Arc). I tested calling `xpc_retain` before inserting into the map, thinking the value did not live long enough:
 
 ```rust
-let map: Arc<RefCell<HashMap<String, Arc<XPCObject>>>> =
-    Arc::new(RefCell::new(HashMap::new()));
-let map_block_clone = map.clone()
-
 let block = ConcreteBlock::new(move |key: *const c_char, value: xpc_object_t| {
     unsafe { xpc_retain(value) };
     let str_key = unsafe { CStr::from_ptr(key).to_string_lossy().to_string() };
 
     let xpc_object: XPCObject = value.into();
-    map_block_clone
+    map_refcell
         .borrow_mut()
         .insert(str_key, xpc_object.into());
 
     true
 });
 
+// https://github.com/SSheldon/rust-block#creating-blocks
 let block = block.copy();
 let ok = unsafe { xpc_dictionary_apply(object.as_ptr(), &*block as *const _ as *mut _) };
 ```
 
-At first, I started to try to "fix" this by littering calls to `xpc_retain` around wherever they stopped crashes. However, this is a bad idea because it means that `XPCObject` is not always safe to use. Instead, constructing an `XPCObject` will call `xpc_retain`
-
-
-Unfortunately, this means that XPCObject isn't always safe to use, because we can't always safely dereference `xpc_object_t`. Instead
-
-
-It is also bad to have calls to `xpc_retain` littered around the code where their purpose isn't obvious, [something I've only recently](https://github.com/mach-kernel/launchk/pull/13) fixed by calling `xpc_retain` every time an `XPCObject` is made. Like this, I can get a better guarantee about the underlying XPCObject living until Rust drops it, where we can add an `xpc_release` call:
+This fixed the segfault! Aftewards, it made sense to also implement `Drop` to clean up after objects we no longer need:
 
 ```rust
 impl Drop for XPCObject {
@@ -439,6 +430,33 @@ impl Drop for XPCObject {
     }
 }
 ```
+
+All felt very motivating but missed the mark. I [littered unsafe code](https://github.com/mach-kernel/launchk/blob/e7da7809c93f72f0b4f0702a8651d27b910a4bee/launchk/src/launchd/query.rs#L150) in application logic thinking I was "fixing segfaults" but was approaching the problem incorrectly (and -- just because it ran 🤦). Our goal is to provide a safe API: the `XPCObject` wrapper is not always safe to use (nor the `xpc_object_t` it carries safe to dereference). There was another problem too:
+
+![](https://i.imgur.com/3ywkEFYh.png)
+
+There's a memory leak, or better yet, about 5k new leaks every 10 seconds. The solution was to be as explicit as possible about which ways XPC object pointers make it into `XPCObject`. It is probably not wise to play with reference counts for objects we did not make -- so the new strategy was to use [`xpc_copy`](https://developer.apple.com/documentation/xpc/1505584-xpc_copy?language=objc) to get deep copies of XPC objects we wanted to place in Rust structs. A second way in would be via `xpc_etc_create` functions. Knowing where these places are allows us to do some logging (ps: thanks for [ref count offsets](https://www.fortinet.com/blog/threat-research/a-look-into-xpc-internals--reverse-engineering-the-xpc-objects) Fortinet):
+
+```
+[INFO  xpc_sys::objects::xpc_object] XPCObject new (0x7f804f60ea10, string, refs 1 xrefs 0)
+[INFO  xpc_sys::objects::xpc_object] XPCObject new (0x6ba154c65adfac3d, int64, refs ???)
+[INFO  xpc_sys::objects::xpc_object] XPCObject drop (0x7f804f60ea10, string, refs 1 xrefs 0)
+[INFO  xpc_sys::objects::xpc_object] XPCObject drop (0x6ba154c65adfac3d, int64, refs ???)
+[INFO  xpc_sys::objects::xpc_object] XPCObject drop (0x7f804f60e7b0, string, refs 1 xrefs 0)
+```
+
+With this, we can figure out if our create/drop counts match:
+```bash
+$ grep 'XPCObject new' log.txt | wc -l
+  193472
+$ grep 'XPCObject drop' log.txt | wc -l
+  193448
+```
+
+Close enough (24) -- there are some statics littered about. Nice and flat, that's what we want to see! And much more significantly -- no more `unsafe` in application code.
+
+![](https://i.imgur.com/AzVABxih.png)
+
 
 Not being explicit threw me into another roadblock that also took on the order of days to figure out. This is the same `launchctl list` XPC dictionary we have been using for all of the examples:
 
@@ -453,7 +471,7 @@ message.insert("legacy", XPCObject::from(true));
 let dictionary: XPCObject = XPCObject::from(message);
 ```
 
-`xpc_pipe_routine` with this dictionary would cause a segfault. I logged both the XPC dictionary made in Rust and the earlier example C program. I checked to make sure that I got the routine and type _numbers_ correct but didn't check the _types_. Mind you, there exists an XPC function to make ints -- so it all worked fine until whatever received the message was unable to deserialize the key correctly.
+`xpc_pipe_routine` with this dictionary would cause a segfault. I logged both the XPC dictionary made in Rust and the earlier example C program. I checked to make sure that I got the routine and type _numbers_ correct but didn't check the _types_. Mind you, there exists an XPC function to make ints -- so it all worked fine until whatever received the message was unable to deserialize the key correctly. Adding `as u64` to get a `uint64` XPC object was the fix:
 
 ```rust
 message.insert("routine", XPCObject::from(815 as u64));
@@ -484,7 +502,7 @@ let reply: Result<XPCDictionary, XPCError> = XPCDictionary::new()
     .pipe_routine_with_error_handling();
 ```
 
-This looks a lot better than what we started with in the first part. I don't know about "idiomatic", but I can live with it. There remains more work to be done: for example, `pipe_routine_with_error_handling` should ideally be able to take a pipe as an argument instead of blindly using the bootstrap pipe, the `XPC*` structs have public pointer members, and so on. I hope to fix these things in the coming months as I get more free time.
+This looks a lot better than what we started with in the first part. I don't know about "idiomatic", but I can live with it. There remains more work to be done: for example, `pipe_routine_with_error_handling` should ideally be able to take a pipe as an argument instead of blindly using the bootstrap pipe, the `XPC*` structs have public pointer members, and you can still make an `XPCObject` from any `xpc_object_t`. I hope to fix these things in the coming months as I get more free time and learn how to do so properly.
 
 We shall move on, but feel free to look at [xpc-sys](https://github.com/mach-kernel/launchk/tree/master/xpc-sys) to see the end result.
 
