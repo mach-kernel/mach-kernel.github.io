@@ -313,10 +313,10 @@ All FFI functions are unsafe: Rust can't check for memory safety issues in exter
 ```rust
 // Make me crash by changing to "subsystem\0"
 let not_a_cstring: &str = "subsystem";
-let cstring: CString = CString::new(not_a_cstring).unwrap();
+let key: CString = CString::new(not_a_cstring).unwrap();
 
 unsafe {
-    xpc_dictionary_set_uint64(list_request, CString::new("subsystem").unwrap().as_ptr(), 3);
+    xpc_dictionary_set_uint64(list_request, key.as_ptr(), 3);
 }
 ```
 
