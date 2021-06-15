@@ -87,7 +87,7 @@ _xpc_pipe_create_from_port
 _xpc_pipe_routine_with_flags
 ```
 
-Breaking on `xpc_pipe_routine_with_flags` succeeds! x86-64 calling convention[^5] in a nutshell: first 6 args go into `%rdi %rsi %rdx %rcx %r8 %r9`, and then on the stack in reverse order ?'?(see link for various edge cases like varadic functions). From the `launjctl` post above, we can use `xpc_copy_description` to get human-readable strings re what is inside an XPC object. Some searching[^6] also found us the function signature!
+Breaking on `xpc_pipe_routine_with_flags` succeeds! x86-64 calling convention[^5] in a nutshell: first 6 args go into `%rdi %rsi %rdx %rcx %r8 %r9`, and then on the stack in reverse order (see link for various edge cases like varadic functions). From the `launjctl` post above, we can use `xpc_copy_description` to get human-readable strings re what is inside an XPC object. Some searching[^6] also found us the function signature!
 
 [^5]: [https://github.com/cirosantilli/x86-assembly-cheat/blob/master/x86-64/calling-convention.md](https://github.com/cirosantilli/x86-assembly-cheat/blob/master/x86-64/calling-convention.md)
 [^6]: [https://grep.app/search?q=xpc_pipe_routine_with_flags](https://grep.app/search?q=xpc_pipe_routine_with_flags)
@@ -347,7 +347,7 @@ if err == 0 {
 
 #### Trying to make it better
 
-The goal (as I understand it) is to make an API for safe _usages_ of the bindings. Advice from a friend of mine, and Jeff Hiner's post[^14] have invaluable resources. I still have a lot of work to do on FFI etiquette! It was suggested to me to move all the bindings to a `*-sys` crate, so I started with that.
+The goal (as I understand it) is to make an API for safe _usages_ of the bindings. Advice from a friend of mine, and Jeff Hiner's post[^14] have been invaluable resources. I still have a lot of work to do on FFI etiquette! It was suggested to me to move all the bindings to a `*-sys` crate, so I started with that.
 
 [^14]: [https://medium.com/dwelo-r-d/wrapping-unsafe-c-libraries-in-rust-d75aeb283c65](https://medium.com/dwelo-r-d/wrapping-unsafe-c-libraries-in-rust-d75aeb283c65)
 
@@ -415,7 +415,7 @@ fn xpc_to_rs_with_wrong_type() {
 }
 ```
 
-At first I marked the structs `Send` and `Sync` for convenience. There are criteria (quoting Jeff's post):
+To be honest, I marked the structs `Send` and `Sync` out of convenience, but there are criteria (quoting Jeff's post):
 
 > You can mark your struct Send if the C code dereferencing the pointer never uses thread-local storage or thread-local locking. This happens to be true for many libraries.
 
@@ -534,7 +534,7 @@ let reply: Result<XPCDictionary, XPCError> = XPCDictionary::new()
     .pipe_routine_with_error_handling();
 ```
 
-This looks a lot better than what we started with in the first part. I don't know about "idiomatic", but I can live with it. There remains more work to be done: for example, `pipe_routine_with_error_handling` should ideally be able to take a pipe as an argument instead of blindly using the bootstrap pipe, the `XPC*` structs have public pointer members, and you can still make an `XPCObject` from any `xpc_object_t`. I hope to fix these things in the coming months as I get more free time and learn how to do so properly.
+This looks a lot better than what we started with in the first part. I don't know about idiomatic, but I can live with it. There remains more work to be done: for example, `pipe_routine_with_error_handling` should ideally be able to take a pipe as an argument instead of blindly using the bootstrap pipe, the `XPC*` structs have public pointer members, and you can still make an `XPCObject` from any `xpc_object_t`. I hope to fix these things in the coming months as I get more free time and learn how to do so properly.
 
 We shall move on, but feel free to look at [xpc-sys](https://github.com/mach-kernel/launchk/tree/master/xpc-sys) to see the end result.
 
@@ -591,13 +591,13 @@ Similarly, it would be nice to filter out services that are enabled and disabled
 0x103800050: 20 3d 20 35 38 33 0a 09 6f 6e 2d 64 65 6d 61 6e   = 583..on-deman
 ```
 
-Some other XPC endpoints (`dumpjpstate`) take UNIX fds and are used in a similar manner. Not really knowing how to safely parse the string, or if I can get structured data out in any other way, I decided to forward the output to a `$PAGER`. Most if not all other requests have responses with useful keys inside an XPC dictionary, so this is far from a complaint! :)
+Some other XPC endpoints (`dumpjpcategory`) take UNIX fds and are used in a similar manner. Not really knowing how to safely parse the string, or if I can get structured data out in any other way, I decided to forward the output to a `$PAGER`. Most if not all other requests have responses with useful keys inside an XPC dictionary, so this is far from a complaint! :)
 
 Other 'weirdness' circles around error semantics. For example, on Catalina, I get the following err invoking `xpc_pipe_routine` (the dialog calls `xpc_strerror` for human-readable messages) as a part of the `reload` command:
 
 ![](https://i.imgur.com/wthF2Chm.png)
 
-On Big Sur, there is no err response unless the failure is critical. I wonder if it's configurable. From here on out it was just feature work: I tried to focus on stuff I wanted like search and filtering. I made some TUI components, a `TableView` out of a [`SelectView`](https://docs.rs/cursive/0.8.2/cursive/views/struct.SelectView.html), and the little `[sguadl]` filter inside the omnibox. 
+On Big Sur, there is no err response unless the failure is critical. I wonder if it's configurable. From here on out was feature work: I tried to focus on stuff I wanted like search and filtering. I made some TUI components, a `TableView` out of a [`SelectView`](https://docs.rs/cursive/0.8.2/cursive/views/struct.SelectView.html), and the little `[sguadl]` filter inside the omnibox. 
 
 #### A great way to spend a few months
 
