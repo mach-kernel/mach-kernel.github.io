@@ -485,7 +485,7 @@ $ grep 'XPCObject drop' log.txt | wc -l
   193448
 ```
 
-Close enough (24) -- there are some statics littered about. Nice and flat, that's what we want to see! And much more significantly -- no more `unsafe` in application code.
+Close enough (24) -- there were probably some live objects before exiting (?). Nice and flat, that's what we want to see! And much more significantly -- no more `unsafe` in application code.
 
 ![](https://i.imgur.com/AzVABxih.png)
 
