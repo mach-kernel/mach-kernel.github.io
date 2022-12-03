@@ -34,4 +34,5 @@ The nice part about this setup is that it's easy to move to a new machine. Yank 
 
 A firewall and a VM host are the first things that need to be sorted. I have been a user of [pfSense](https://www.pfsense.org/) and [ESXI](https://www.vmware.com/products/esxi-and-esx.html) for some time, and chose them for their familiarity. Proxmox and OPNSense are probably great choices too. Start with a small diagram of how you want things to be hooked up:
 
+![Untitled-2022-12-03-1537](https://user-images.githubusercontent.com/396039/205463194-02206c5e-ac44-4d9f-bc2f-45baaa782cee.png)
 
