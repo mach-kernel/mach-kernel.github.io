@@ -36,3 +36,20 @@ A firewall and a VM host are the first things that need to be sorted. I have bee
 
 ![Untitled-2022-12-03-1537](https://user-images.githubusercontent.com/396039/205463194-02206c5e-ac44-4d9f-bc2f-45baaa782cee.png)
 
+From there, start creating your vSwitches and the subsequent port groups you will use to lay out the trunks for your network:
+
+| vSwitch | Port Groups   |
+|---------|---------------|
+| LAN     | LAN, K8S, IOT |
+| iSCSI   | iSCSI         |
+| WAN     | WAN           |
+
+A lot of the configuration is [explained nicely in this article](https://www.virtualizationhowto.com/2022/03/pfsense-vlan-to-vlan-routing-in-vmware-esxi/). In short, we attach one interface per port group we want to connect to pfSense (option #2 in the article). You can also trunk from pfSense (to get around the 10 NIC limit per VM / option #3) -- but IMO is overkill for something the size of a home network. Get a nice L3 switch if you need more.
+
+Also probably obvious, but worth mentioning: there are more ESXI port groups than physical stuff from the initial diagram. All of my physical hosts are things like my XBOX, a Sonos, TVs, etc -- but for things like a Kubernetes cluster, those are virtual fleets running in ESXI. This is what makes this vSwitch/port group setup awesome: I can compose the physical and virtual pieces of my network and still be able to make some kind of order out of it.
+
+Some time is probably going to be spent here, getting everything right. It's a good point in time to begin layering in things such as [pfBlocker-NG](https://docs.netgate.com/pfsense/en/latest/packages/pfblocker.html), OpenVPN, and other desired goodies. Make sure to take care of placing your pfSense configuration backups somewhere safe. After getting these pieces right, you'll rarely have to touch them again in the future.
+
+#### Add layer: storage
+
+
