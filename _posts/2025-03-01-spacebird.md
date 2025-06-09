@@ -87,3 +87,18 @@ The spritesheet shows birdie as it flaps its wings up and down, so to make birdi
 
 https://github.com/user-attachments/assets/8de8015e-055d-4794-bf96-fb1b72e5878e
 
+#### Sound
+
+There was no multimedia API. Each sound card had its own drivers. Game studios would purchase commercial libraries that implemented support for a handful of cards that were popular/commerically available at the time. Or some games implemented their own DMA routines to play audio without an external package. I fiddled with the PC tweeter, but it felt limited in that it only really beeps and bloops. The Libretto has a Yamaha OPL3 sound chip which is SoundBlaster compatible (which is good news for compatibility). I elected to use the [MIDAS](https://s2.org/midas/) audio library. This was actually the impetus behind the 32-bit memory model: the latest release of MIDAS only runs in 32-bit mode.
+
+Getting started with MIDAS was amazingly easy to do: link the library, include one header, and a myriad of tracker formats and sound cards become available to you. I had a much harder time converting wave samples off of Twitch to a tracker format supported by MIDAS. I ended up using [OpenMPT](https://openmpt.org/) to save to `IT` Impulse Tracker files.
+
+#### Final Result
+
+Once the basics were in place, I was free to try to "hollywood" random things to make the game a little more visually interesting. I decided to make a "procedurally generated starfield" (i.e. "spray `rand()` white pixel into VBUF"), colored the pipes in rainbow that scrolls as the pipes pass, and also increase the speed of the pipes as your score increases (to increase difficulty).
+
+The end result is playable, but could use a bunch of tweaking. Sometimes the pipes leave for an unusually difficult passage (especially when things speed up). Occasionally there are some rendering glitches too. Supposedly there is some fast asm inline way to copy to the video buffer. A lot of people mention "page flipping", but AFAICT there is only one 13h buffer and the only way to update it is to `memcpy` to it as fast as possible. It could also likely be that I'm writing the vbuf too often in my main event loop. There is a [vsync IRQ](https://scalibq.wordpress.com/2022/12/06/the-myth-of-the-vertical-retrace-interrupt/) that I could handle which might fix the tearing issues. I'm looking forward to trying that out soon!
+
+Play here (dosbox-em/wasm): https://mach-kernel.github.io/spcbrd/
+Repo here: https://github.com/mach-kernel/spcbrd
+
