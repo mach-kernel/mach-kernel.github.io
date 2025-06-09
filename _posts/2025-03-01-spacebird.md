@@ -79,10 +79,11 @@ Time to replace the dot with [this really cute bird sprite](https://ma9ici4n.itc
 - As we read the PCX, find the color with the closest abs value to the 24-bit color, and assign the spritesheet pixel that palette index
 
 I'm not sure this is the most efficient or correct way to do these things, but it got us a result:
+![IMG_5134](https://github.com/user-attachments/assets/ad69f538-eddb-494f-ae98-16c016978b5e)
 
-...
 
 The spritesheet shows birdie as it flaps its wings up and down, so to make birdie come to life, we have to flip between the tiles. We also have to consider layers/clipping: the bird should be the topmost layer and should be drawn without its white background showing. I edited the asset to make the PCX background color the same as that of my scene. Then, if drawing the sprite and encountering my `BG_COLOR`, I could skip writing to the video buffer. I made some changes to keep track of the current sprite frame in the state singleton, and after some tweaking, birdie was flying:
 
-...
+
+https://github.com/user-attachments/assets/8de8015e-055d-4794-bf96-fb1b72e5878e
 
