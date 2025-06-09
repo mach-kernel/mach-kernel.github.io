@@ -36,7 +36,7 @@ The next goal was to make a flappy bird clone. A spec for that can look like:
   - Score = num pipes passed
   - Space = jump
 
-#### Pipes
+#### Basic Scene
 
 To implement scrolling pipes, we need some kind of clock (to interpolate movement), state telling us where our pipes are at any given time, and a rudimentary event loop. I have `wlink` set to emit a dos4g compatible executable that comes prefixed with the OW DOS/4G stub. This gives us a simple linear memory model with 32-bit pointers, and avoids having us think about the 640k memory issue (albeit, this game is so small, that shouldn't be a problem). This means that `near` and `far` pointers are all just simply `far` pointers. So I can `malloc` and `calloc` stuff without worrying about where it's going. I opted to store all of my state in a heap-allocated singleton struct:
 
@@ -44,26 +44,45 @@ To implement scrolling pipes, we need some kind of clock (to interpolate movemen
 #define NUM_PIPES 6
 #define MAX_PIPE_Y 100   // pixels
 #define MAX_PIPE_X 40    // pixels
+#define G 2              // ~36 px/sec
 
 typedef struct flapstate {
     // [x, y]
 	int pipes[NUM_PIPES][2];
+    // where [y(input),y(bird)]
+	int birdie[2];
 } flapstate;
 
 static flapstate *STATE = NULL;
 ```
 
-Now that we know what our state looks like, the rest just involved hooking the 0x1C interrupt timer (18hz) to move the pipes:
+We also included some state for mocking up our birdie. The bird remains in a fixed `x` position, but moves up and down `y` as the player jumps. Since the bird falls without input (causing the player to lose on collision), we must also define a gravity constant. I used the DOS `0x1C` timer (18.2hz) as the hook for moving the pipes and birdie along:
 
 ```c
-void __interrupt __far draw_pipes();
+void __interrupt __far timer_game_tick();
 
 // ...
 
 prev_timer = _dos_getvect(0x1C);
-_dos_setvect(0x1C, draw_pipes);
+_dos_setvect(0x1C, timer_game_tick);
 ```
 
 https://github.com/user-attachments/assets/03847f27-abb9-497f-895e-6be71c08b523
 
+
+#### Sprites
+
+Time to replace the dot with [this really cute bird sprite](https://ma9ici4n.itch.io/pixel-art-bird-16x16). Most DOS games of the era used [PCX](https://en.wikipedia.org/wiki/PCX) as their asset format (mostly due to its simplicity: it's a bitmap). A 128 byte header has some metadata about the image, followed by run-length encoded scanlines. Our image is 8 bpp * 3 color planes (24-bit color), so for example, to read a 16 pixel row (without RLE), we'd read 48 bytes (16px R/G/B). We want to read the spritesheet and store it in memory un-RLE'd while also binning the 24-bit colors into 8-bit pixels ("color quantization"). As mentioned earlier, the video buffer expects a VGA color palette index for each pixel (and not a byte representing an RGB value). To draw the bird, we have to do the following:
+
+- Read the active VGA palette colors into memory
+- Read the uncompressed PCX into memory
+- As we read the PCX, find the color with the closest abs value to the 24-bit color, and assign the spritesheet pixel that palette index
+
+I'm not sure this is the most efficient or correct way to do these things, but it got us a result:
+
+...
+
+The spritesheet shows birdie as it flaps its wings up and down, so to make birdie come to life, we have to flip between the tiles. We also have to consider layers/clipping: the bird should be the topmost layer and should be drawn without its white background showing. I edited the asset to make the PCX background color the same as that of my scene. Then, if drawing the sprite and encountering my `BG_COLOR`, I could skip writing to the video buffer. I made some changes to keep track of the current sprite frame in the state singleton, and after some tweaking, birdie was flying:
+
+...
 
