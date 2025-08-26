@@ -1,10 +1,13 @@
 ---
+categories:
+  - seo
+  - schema-org
+date: 2017-04-17 19:16:52+00:00
+
 title: skemata, a JSON-LD DSL
-published: true
-layout: post
-categories: seo schema-org
-date: 2017-04-17T19:16:52.000Z
+url: /2017/04/17/json-ld-library/
 ---
+
 
 Placing [schema.org dichotomies](https://schema.org/docs/full.html) in your page allows search engines to crawl and recognize data that you are presenting. For example, [this credit card review](https://www.mybanktracker.com/credit-cards/expert-reviews/fidelity-rewards-visa-signature-card-review-254403) on our site can now be understood by Google, so our search engine listings display as...
 

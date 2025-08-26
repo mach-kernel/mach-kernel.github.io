@@ -1,10 +1,13 @@
 ---
+categories:
+  - foss
+  - pocketsphinx
+date: 2017-07-16 14:21:37+00:00
+
 title: Breaking API change
-published: true
-layout: post
-categories: foss pocketsphinx
-date: 2017-07-16T14:21:37Z
+url: /2017/07/16/breaking-sphinx/
 ---
+
 
 Today I finally got some time to do maintenance work on one of my side-projects, but immediately was greeted with this while trying to do something locally...
 

@@ -1,10 +1,16 @@
 ---
-title: "Baby's first Rust with extra steps (XPC, launchd, and FFI)!"
-published: true
-layout: post
-categories: macos rust ffi xpc ncurses
-date: 2021-06-15T09:47:15+0000
+categories:
+  - macos
+  - rust
+  - ffi
+  - xpc
+  - ncurses
+date: 2021-06-15T09:47:15+00:00
+
+title: Baby's first Rust with extra steps (XPC, launchd, and FFI)!
+url: /2021/06/15/rust-xpc-ffi/
 ---
+
 
 During an ongoing argument in a chatroom between some folks about how "zomg systemd is ruining everything", I decided to look at some init system history. I learned a cool tidbit of information from a HN comment[^1]: apparently systemd's design was inspired by Apple's launchd. Embarassingly, I knew little to nothing about launchd, even as a lifelong Mac user. I began to play with `launchctl` on my local machine. Turns out that launchd does some pretty cool things: the `*.plist` describing a job can do more than just specify its arguments. For example, the `QueueDirectories` key lets you spawn jobs when files are added to a directory (how useful!). I was oblivious to this having interacted with launchd the past years mostly via `brew services`. With the help of [soma-zone's LaunchControl](https://www.soma-zone.com/LaunchControl/) and [launchd.info](https://www.launchd.info/) companion site, I was able to fiddle and figure out what various plist keys did. 
 

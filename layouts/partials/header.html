@@ -11,21 +11,17 @@
   </div>
   <div class="flex justify-between items-center links">
     <div class="nav">
-      {% if page.url == '/' %}
+      {{ if eq .RelPermalink "/" }}
       <a class="link ds-gold hover-light-purple underline" href="/">[home]</a>
-      {% else %}
+      {{ else }}
       <a class="link ds-gold hover-light-purple" href="/">[home]</a>
-      {% endif %}
+      {{ end }}
 
-      <!-- {% if page.url == '/all.html' %}
-      <a class="link ds-gold hover-light-purple underline" href="/all">[all]</a>
-      {% else %}
-      <a class="link ds-gold hover-light-purple" href="/all">[all]</a>
-      {% endif %} -->
-      
-      {% if page.url != '/' %}
-        <span class="black">{{ page.id }}</span>
-      {% endif %}
+      {{ if ne .RelPermalink "/" }}
+        {{ with .File }}
+        <span class="black">{{ .TranslationBaseName }}</span>
+        {{ end }}
+      {{ end }}
     </div>
     <div>
       <a class="link ds-gold hover-light-purple" target="_blank" href="https://github.com/mach-kernel">[github]</a>

@@ -1,10 +1,13 @@
 ---
-title: "Dev diaries: I made a 13h game 3 years ago"
-published: true
-layout: post
-categories: project dos
-date: 2025-03-01T17:41:31-05:00
+categories:
+  - project
+  - dos
+date: 2025-03-01 17:41:31-05:00
+
+title: 'Dev diaries: I made a 13h game 3 years ago'
+url: /2025/03/01/spacebird/
 ---
+
 
 Every year during winter break I try to pick an ambitious-but-doable project, with the intent to write about it after. Sometimes I finish them, but rarely is break long enough to get to this point. I figure that late is better than never, before they fall out of my head!
 
@@ -101,4 +104,3 @@ The end result is playable, but could use a bunch of tweaking. Sometimes the pip
 
 Play here (dosbox-em/wasm): https://mach-kernel.github.io/spcbrd/
 Repo here: https://github.com/mach-kernel/spcbrd
-

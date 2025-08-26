@@ -1,0 +1,9 @@
+{{ define "main" }}
+{{ .Content }}
+
+<div class="posts">
+  {{ range .Pages }}
+    {{ partial "post-preview.html" . }}
+  {{ end }}
+</div>
+{{ end }}

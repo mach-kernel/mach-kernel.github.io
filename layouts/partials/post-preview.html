@@ -1,0 +1,12 @@
+<div class="post-preview mb4">
+  <div class="f3 mb1">
+    <a class="link dark-blue hover-light-purple" href="{{ .RelPermalink }}">{{ .Title }}</a>
+  </div>
+  {{ .Date.Format "2006-01-02" }}
+  {{ with .Params.categories }}
+  <div class="fu-mono ds-gold mt2 f5">{{ delimit . ", " }}</div>
+  {{ end }}
+  <div class="f6 lh-copy">
+    {{ .Summary }}
+  </div>
+</div>

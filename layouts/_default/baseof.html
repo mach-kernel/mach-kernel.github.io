@@ -1,17 +1,18 @@
 <!DOCTYPE html>
-<html lang="{{ site.lang | default: "en-US" }}">
+<html lang="{{ .Site.Language.Lang | default "en-US" }}">
   <head>
     <link rel="stylesheet" href="https://unpkg.com/tachyons@4.12.0/css/tachyons.min.css"/>
-    <link rel="stylesheet" href="{{ "/assets/css/main.css" | relative_url }}">
+    {{ $style := resources.Get "scss/main.scss" | css.Sass | resources.Minify }}
+    <link rel="stylesheet" href="{{ $style.RelPermalink }}">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta charset="utf-8">
-    <title>{{ page.title }} - {{ site.title }}</title>
+    <title>{{ .Title }} - {{ .Site.Title }}</title>
   </head>
   <body>
     <div class='dstancu-container'>
-      {% include header.html %}
+      {{ partial "header.html" . }}
       <div class='content mt4'>
-        {{ content }}
+        {{ block "main" . }}{{ end }}
       </div>
     </div>
   </body>
