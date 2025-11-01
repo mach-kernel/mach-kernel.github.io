@@ -4,7 +4,7 @@ categories:
   - retro
 date: 2017-01-21 01:16:22+00:00
 
-title: 'G4 MDD: Debian Sid!'
+title: 'G4 MDD: Debian Sid'
 url: /2017/01/20/powermac-debian-install/
 ---
 

@@ -1,7 +1,8 @@
 ---
 categories:
-  - project
   - dos
+  - programming
+  - game
 date: 2025-03-01 17:41:31-05:00
 
 title: 'Dev diaries: I made a 13h game 3 years ago'

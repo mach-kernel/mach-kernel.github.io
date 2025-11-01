@@ -1,7 +1,6 @@
 ---
 categories:
-  - seo
-  - schema-org
+  - programming
 date: 2017-04-17 19:16:52+00:00
 
 title: skemata, a JSON-LD DSL

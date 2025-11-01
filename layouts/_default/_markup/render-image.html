@@ -1,0 +1,14 @@
+{{- /* Image render hook - simple and clean */ -}}
+<figure class="my-6">
+  <img
+    src="{{ .Destination | safeURL }}"
+    alt="{{ .Text }}"
+    class="max-w-full h-auto border-4 border-neutral-300"
+    loading="lazy"
+  />
+  {{- if .Title }}
+  <figcaption class="text-sm text-center text-base-content/60 mt-2">
+    {{ .Title }}
+  </figcaption>
+  {{- end }}
+</figure>

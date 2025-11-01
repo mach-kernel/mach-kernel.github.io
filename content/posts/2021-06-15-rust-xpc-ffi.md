@@ -1,10 +1,8 @@
 ---
 categories:
-  - macos
-  - rust
-  - ffi
-  - xpc
-  - ncurses
+  - apple
+  - programming
+  - reversing
 date: 2021-06-15T09:47:15+00:00
 
 title: Baby's first Rust with extra steps (XPC, launchd, and FFI)!

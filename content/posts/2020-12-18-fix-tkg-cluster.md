@@ -1,7 +1,6 @@
 ---
 categories:
-  - homelab
-  - vmware
+  - cloud
 date: 2020-12-11 19:29:30-05:00
 
 title: Breaking your TKG cluster is easier than fixing it

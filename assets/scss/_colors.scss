@@ -1,12 +1,19 @@
-$dstancu-bg: #f9f9f9;
-$dstancu-accent: #694f91;
-$dstancu-body: #0E0E0E;
-$dstancu-gold: #9C8F2D;
+// Primary accent colors used throughout the site
+$purple-primary: #7c3aed;        // violet-600 - main purple accent (links, badges, code borders)
+$purple-dark: #6b21a8;           // violet-800 - darker purple (hover states)
+$purple-light: #c4b5fd;          // violet-300 - light purple (code headers)
+$purple-bg-light: #f3e8ff;       // violet-100 - very light purple background (badges)
+$purple-border-light: #e9d5ff;   // violet-200 - light purple borders (badges, inline code)
 
-.ds-purple {
-  color: $dstancu-accent
-}
+// Text colors
+$text-primary: #1f2937;          // gray-800 - main content text
+$text-heading: #111827;          // gray-900 - headings
+$text-muted: #6b7280;            // gray-500 - muted text
 
-.ds-gold {
-  color: $dstancu-gold;
-}
+// Border colors
+$border-light: #d1d5db;          // gray-300 - light borders
+$border-medium: #9ca3af;         // gray-400 - medium borders (images/videos)
+
+// Background colors
+$bg-code-block: #1f2937;         // gray-800 - code block background
+$bg-light: #f9fafb;              // gray-50 - light background (blockquotes)

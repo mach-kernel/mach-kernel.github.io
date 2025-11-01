@@ -1,0 +1,8 @@
+{{- /* Code block render hook with language label and copy button */ -}}
+<div class="code-block-wrapper">
+  <div class="code-header">
+    <span class="code-language">{{ or (.Type) "code" }}</span>
+    <button class="copy-button" data-copy-code aria-label="Copy code to clipboard">Copy</button>
+  </div>
+  {{ highlight .Inner (.Type) "" }}
+</div>

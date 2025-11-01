@@ -1,3 +1,17 @@
 baseURL = 'https://example.org/'
 languageCode = 'en-us'
 title = 'My New Hugo Site'
+
+# Summary settings
+summaryLength = 20  # Number of words in summary (default is 70)
+
+# Syntax highlighting
+[markup]
+  [markup.highlight]
+    anchorLineNos = false
+    codeFences = true
+    guessSyntax = true
+    lineNos = false
+    noClasses = false
+    style = 'monokai'
+    tabWidth = 2
