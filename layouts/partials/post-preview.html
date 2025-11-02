@@ -1,40 +1,42 @@
-<div class="card bg-base-200/20 hover:bg-base-200/30 shadow-sm hover:shadow-md transition-all duration-300 mb-8 border-0 border-l-4 border-primary/30 hover:border-primary/60">
-  <div class="card-body p-8">
-    <div class="post-header mb-1">
-      <h2 class="card-title text-2xl font-bold leading-tight flex-1">
-        <a class="post-title-link" href="{{ .RelPermalink }}">{{ .Title }}</a>
-      </h2>
-      {{ with .Params.categories }}
-      <div class="post-tags">
-        <span class="tag-divider text-base-content/30 text-sm">•</span>
-        <div class="flex gap-2 flex-wrap">
-          {{ range . }}
-          <span class="category-badge">{{ . }}</span>
-          {{ end }}
+<a href="{{ .RelPermalink }}" class="block no-underline">
+  <div class="card bg-base-200/20 hover:bg-base-200/30 shadow-sm hover:shadow-md transition-all duration-300 mb-8 border-0 border-l-4 border-primary/30 hover:border-primary/60 cursor-pointer">
+    <div class="card-body p-8">
+      <div class="post-header mb-1">
+        <h2 class="card-title text-2xl font-bold leading-tight flex-1 text-base-content">
+          {{ .Title }}
+        </h2>
+        {{ with .Params.categories }}
+        <div class="post-tags">
+          <span class="tag-divider text-base-content/30 text-sm">•</span>
+          <div class="flex gap-2 flex-wrap">
+            {{ range . }}
+            <span onclick="event.stopPropagation(); event.preventDefault(); window.location.href='{{ "/categories/" | relLangURL }}{{ . | urlize }}';" class="category-badge cursor-pointer">{{ . }}</span>
+            {{ end }}
+          </div>
         </div>
+        {{ end }}
       </div>
-      {{ end }}
-    </div>
 
-    <time class="text-sm font-medium text-base-content/60 block mb-3">
-      {{ .Date.Format "January 2, 2006" }}
-    </time>
+      <time class="text-sm font-medium text-base-content/60 block mb-3">
+        {{ .Date.Format "January 2, 2006" }}
+      </time>
 
-    <div class="relative mb-4">
-      <div class="line-clamp-3">
-        <p class="text-base leading-relaxed text-base-content/80">
-          {{ .Summary }}
-        </p>
+      <div class="relative mb-4">
+        <div class="line-clamp-3">
+          <p class="text-base leading-relaxed text-base-content/80">
+            {{ .Summary }}
+          </p>
+        </div>
+        <div class="fade-overlay"></div>
       </div>
-      <div class="fade-overlay"></div>
-    </div>
 
-    <a href="{{ .RelPermalink }}" class="read-more-link">
-      Read more
-      <svg class="read-more-arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="5" y1="12" x2="19" y2="12"></line>
-        <polyline points="12 5 19 12 12 19"></polyline>
-      </svg>
-    </a>
+      <div class="read-more-link">
+        Read more
+        <svg class="read-more-arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+      </div>
+    </div>
   </div>
-</div>
+</a>

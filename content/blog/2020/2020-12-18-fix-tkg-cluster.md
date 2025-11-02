@@ -3,8 +3,8 @@ categories:
   - cloud
 date: 2020-12-11 19:29:30-05:00
 
-title: Breaking your TKG cluster is easier than fixing it
-url: /2020/12/18/fix-tkg-cluster/
+title: Fixing etcd in your TKG cluster
+url: /blog/2020/12/18/fix-tkg-cluster/
 ---
 
 

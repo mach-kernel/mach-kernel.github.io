@@ -1,12 +1,19 @@
-baseURL = 'https://example.org/'
+baseURL = 'https://dstancu.xyz/'
 languageCode = 'en-us'
-title = 'My New Hugo Site'
+title = 'David Stancu'
 
 # Summary settings
 summaryLength = 20  # Number of words in summary (default is 70)
 
+# Permalink settings
+[permalinks]
+  blog = '/:year/:month/:day/:slug/'
+
 # Syntax highlighting
 [markup]
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true
   [markup.highlight]
     anchorLineNos = false
     codeFences = true

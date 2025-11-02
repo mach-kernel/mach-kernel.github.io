@@ -55,7 +55,7 @@
 .read-more-arrow {
   transition: transform 0.2s ease;
 
-  .read-more-link:hover & {
+  .card:hover & {
     transform: translateX(4px);
   }
 }
@@ -67,6 +67,7 @@
   font-weight: 500;
   border-radius: 1rem;
   transition: all 0.2s ease;
+  text-decoration: none;
 
   background-color: #f3e8ff;
   color: #7c3aed;
@@ -75,6 +76,7 @@
   &:hover {
     background-color: #ede9fe;
     border-color: #ddd6fe;
+    text-decoration: none;
   }
 
   [data-theme="dark"] & {

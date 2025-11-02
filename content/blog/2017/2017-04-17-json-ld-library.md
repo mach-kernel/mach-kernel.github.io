@@ -4,7 +4,7 @@ categories:
 date: 2017-04-17 19:16:52+00:00
 
 title: skemata, a JSON-LD DSL
-url: /2017/04/17/json-ld-library/
+url: /blog/2017/04/17/json-ld-library/
 ---
 
 

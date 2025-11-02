@@ -5,7 +5,7 @@ categories:
 date: 2017-01-21 01:16:22+00:00
 
 title: 'G4 MDD: Debian Sid'
-url: /2017/01/20/powermac-debian-install/
+url: /blog/2017/01/20/powermac-debian-install/
 ---
 
 I'm installing Debian on my FW 800 MDD PowerMac G4, and I'm going to talk about it here so you too can convince yourself that your Friday night, is in fact, probably better. 

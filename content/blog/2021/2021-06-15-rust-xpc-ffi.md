@@ -6,7 +6,7 @@ categories:
 date: 2021-06-15T09:47:15+00:00
 
 title: Baby's first Rust with extra steps (XPC, launchd, and FFI)!
-url: /2021/06/15/rust-xpc-ffi/
+url: /blog/2021/06/15/rust-xpc-ffi/
 ---
 
 
