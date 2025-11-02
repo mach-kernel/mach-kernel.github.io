@@ -1,0 +1,53 @@
+<header>
+
+  <!-- <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center py-4 gap-4">
+    <!-- <div class="text-sm">
+      <span>PGP: 540FFD1702007D89</span>
+      <br />
+      <span>dstancu [at] nyu [dot] edu</span>
+    </div> -->
+  <!-- </div> -->
+
+  <div class="navbar bg-base-100 shadow-sm p-0 border-b border-base-200 min-h-0 h-16 gap-0">
+    <a class="btn btn-ghost text-2xl pr-10 rounded-none h-16" href="/">David Stancu</a>
+    <div class="flex-1 flex gap-0">
+      {{ $currentPath := .RelPermalink }}
+      {{ if eq $currentPath "/" }}
+      <a class="h-16 px-4 flex items-center justify-center bg-primary/80 text-primary-content border-0 no-underline hover:bg-primary/70" href="/">Home</a>
+      {{ else }}
+      <a class="h-16 px-4 flex items-center justify-center hover:bg-base-200 border-0 no-underline" href="/">Home</a>
+      {{ end }}
+
+      {{ if eq $currentPath "/work/" }}
+      <a class="h-16 px-4 flex items-center justify-center bg-primary/80 text-primary-content border-0 no-underline hover:bg-primary/70" href="/work">Work</a>
+      {{ else }}
+      <a class="h-16 px-4 flex items-center justify-center hover:bg-base-200 border-0 no-underline" href="/work">Work</a>
+      {{ end }}
+    </div>
+    <div class="flex-none flex gap-0">
+
+
+      <a class="h-16 px-4 flex items-center justify-center gap-2 hover:bg-base-200 border-0 no-underline" target="_blank" href="https://github.com/mach-kernel">
+        <i class="bi bi-github"></i>
+        GitHub
+      </a>
+
+            <button class="h-16 w-16 flex items-center justify-center hover:bg-base-200 border-0" id="theme-toggle" aria-label="Toggle theme">
+        <svg id="theme-icon-light" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg id="theme-icon-dark" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</header>

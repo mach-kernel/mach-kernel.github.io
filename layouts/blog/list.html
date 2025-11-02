@@ -1,0 +1,25 @@
+{{ define "main" }}
+{{ if eq .Title "Blog" }}
+<div class="bg-gradient-to-r from-primary/10 to-primary/5 border-l-4 border-primary mb-8 -mx-4 px-4 py-12 md:py-16">
+  <div class="max-w-4xl">
+    <h1 class="text-4xl md:text-5xl font-bold mb-4">👋 Hi, I'm David</h1>
+    <p class="text-xl md:text-2xl text-base-content/80 leading-relaxed">
+      I'm a software engineer living in Queens, NYC. I write about software, retro computing, and various technical projects.
+    </p>
+  </div>
+</div>
+{{ end }}
+
+<div class="posts">
+  {{ if ne .Title "Blog" }}
+  <h1 class="text-3xl font-bold mb-8">Posts from {{ .Title }}</h1>
+  {{ range .Pages }}
+    {{ partial "post-preview.html" . }}
+  {{ end }}
+  {{ else }}
+  {{ range where .Site.RegularPages "Section" "blog" }}
+    {{ partial "post-preview.html" . }}
+  {{ end }}
+  {{ end }}
+</div>
+{{ end }}

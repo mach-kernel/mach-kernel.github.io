@@ -1,0 +1,24 @@
+baseURL = 'https://dstancu.xyz/'
+languageCode = 'en-us'
+title = 'David Stancu'
+
+# Summary settings
+summaryLength = 20  # Number of words in summary (default is 70)
+
+# Permalink settings
+[permalinks]
+  blog = '/:year/:month/:day/:slug/'
+
+# Syntax highlighting
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true
+  [markup.highlight]
+    anchorLineNos = false
+    codeFences = true
+    guessSyntax = true
+    lineNos = false
+    noClasses = false
+    style = 'monokai'
+    tabWidth = 2

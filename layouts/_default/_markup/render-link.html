@@ -1,0 +1,40 @@
+{{- /* Link render hook with special handling for videos */ -}}
+{{- $url := .Destination | safeURL -}}
+{{- $isVideo := false -}}
+{{- $videoExts := slice ".mp4" ".webm" ".ogg" ".mov" -}}
+
+{{- /* Check if the link is to a video file */ -}}
+{{- range $videoExts -}}
+  {{- if strings.HasSuffix $url . -}}
+    {{- $isVideo = true -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Check for GitHub user-attachments (these are typically videos/images) */ -}}
+{{- if and (strings.Contains $url "github.com/user-attachments/assets") (not $isVideo) -}}
+  {{- $isVideo = true -}}
+{{- end -}}
+
+{{- if $isVideo -}}
+  {{- /* Render as video player */ -}}
+  {{- $videoType := "video/mp4" -}}
+  {{- $ext := path.Ext $url | strings.TrimPrefix "." -}}
+  {{- if ne $ext "" -}}
+    {{- $videoType = printf "video/%s" $ext -}}
+  {{- end -}}
+
+  <figure class="video-wrapper my-6">
+    <video controls class="max-w-full h-auto border-4 border-neutral-300">
+      <source src="{{ $url }}" type="{{ $videoType }}">
+      Your browser does not support the video tag.
+    </video>
+    {{- if .Title }}
+    <figcaption class="text-sm text-center text-base-content/60 mt-2">
+      {{ .Title }}
+    </figcaption>
+    {{- end }}
+  </figure>
+{{- else -}}
+  {{- /* Regular link */ -}}
+  <a href="{{ $url }}"{{ with .Title }} title="{{ . }}"{{ end }}>{{ .Text | safeHTML }}</a>
+{{- end -}}

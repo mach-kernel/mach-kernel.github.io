@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="{{ .Site.Language.Lang | default "en-US" }}" data-theme="light">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ .Title }} - {{ .Site.Title }}</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
+    {{ $style := resources.Get "scss/main.scss" | css.Sass | resources.Minify }}
+    <link rel="stylesheet" href="{{ $style.RelPermalink }}" />
+
+    {{ $codeBlocks := resources.Get "js/code-blocks.js" | resources.Minify }}
+    <script src="{{ $codeBlocks.RelPermalink }}" defer></script>
+
+    {{ $themeToggle := resources.Get "js/theme-toggle.js" | resources.Minify }}
+    <script src="{{ $themeToggle.RelPermalink }}"></script>
+  </head>
+  <body class="bg-base-100">
+    <div class='container mx-auto max-w-4xl px-4'>
+      {{ partial "header.html" . }}
+      <div class='mt-8'>
+        {{ block "main" . }}{{ end }}
+      </div>
+    </div>
+  </body>
+</html>
