@@ -11,9 +11,9 @@
           <table class="w-full border-collapse">
             <tbody>
               {{ range .pulls }}
-              <tr class="border-b border-base-200 hover:bg-base-200/30 transition-all duration-300 cursor-pointer pr-row">
-                <td class="py-4 px-2 pl-4 align-top">
-                  <a href="{{ .meta.html_url }}" target="_blank" class="flex items-start gap-3 no-underline">
+              <tr class="border-b border-base-200 hover:bg-base-200/30 transition-all duration-300 cursor-pointer pr-row" onclick="if(event.target.tagName !== 'A') window.open('{{ .meta.html_url }}', '_blank')">
+                <td class="py-4 px-4 align-top">
+                  <div class="flex items-start gap-3">
                     <i class="bi bi-git-pull-request text-lg {{ if .meta.merged }}text-success{{ else }}text-base-content/40{{ end }} mt-1"></i>
                     <div class="flex-1 min-w-0">
                       <div class="mb-2">
@@ -21,7 +21,7 @@
                           {{ .meta.full_name }}
                         </span>
                       </div>
-                      <div class="text-sm text-base-content/70 mb-2">
+                      <div class="text-sm text-base-content/70 mb-2 pr-description">
                         {{ .description | markdownify }}
                       </div>
                       <div class="flex items-center gap-4 text-xs text-base-content/50">
@@ -36,7 +36,32 @@
                         <span class="text-error">-{{ .meta.deletions }}</span>
                       </div>
                     </div>
-                  </a>
+                  </div>
+                </td>
+              </tr>
+              {{ end }}
+              {{ range .links }}
+              <tr class="border-b border-base-200 hover:bg-base-200/30 transition-all duration-300 cursor-pointer pr-row" onclick="if(event.target.tagName !== 'A') window.open('{{ .url }}', '_blank')">
+                <td class="py-4 px-4 align-top">
+                  <div class="flex items-start gap-3">
+                    <i class="bi bi-shield-exclamation text-lg text-warning mt-1"></i>
+                    <div class="flex-1 min-w-0">
+                      <div class="mb-2 flex items-center gap-3 flex-wrap">
+                        <span class="font-semibold text-base-content hover:text-primary">
+                          {{ .title }}
+                        </span>
+                        {{ if .cvss_3 }}
+                        <span class="badge badge-warning badge-sm">CVSS {{ .cvss_3 }}</span>
+                        {{ end }}
+                      </div>
+                      <div class="text-sm text-base-content/70 mb-2 pr-description">
+                        {{ .description | markdownify }}
+                      </div>
+                      <div class="flex items-center gap-4 text-xs text-base-content/50">
+                        <span>{{ .type }}</span>
+                      </div>
+                    </div>
+                  </div>
                 </td>
               </tr>
               {{ end }}

@@ -17,10 +17,10 @@
   (let [[maybe-org-repo maybe-repo-id id] parts]
     (cond 
       (and maybe-org-repo maybe-repo-id id)
-      (format "%s/repos/%s/%s/pulls/%d" github-api-url maybe-org-repo maybe-repo-id id)
+      (format "%s/repos/%s/%s/pulls/%s" github-api-url maybe-org-repo maybe-repo-id id)
       
       (and maybe-org-repo maybe-repo-id)
-      (format "%s/repos/%s/pulls/%d" github-api-url maybe-org-repo maybe-repo-id)
+      (format "%s/repos/%s/pulls/%s" github-api-url maybe-org-repo maybe-repo-id)
       
       :else (throw (ex-info "Can't generate URL" {:parts parts})))))
 
@@ -28,6 +28,7 @@
   [opts org-repo pull-id]
   (let [full-name (subs (str org-repo) 1)
         uri (->repos-pull-url opts full-name pull-id)]
+    (println "Updating" full-name pull-id)
     (some-> (http/get uri)
             :body
             (json/read-str)
@@ -40,7 +41,7 @@
     form
     (let [org-repo (first form)
           pull-id  (second form)]
-      (if (and (keyword? org-repo) (number? pull-id))
+      (if (and (keyword? org-repo) (int? pull-id))
         (let [meta (pull->meta opts org-repo pull-id)]
           [:meta meta])
         (into [] form)))))

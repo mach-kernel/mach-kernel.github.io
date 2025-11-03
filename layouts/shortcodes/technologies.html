@@ -1,0 +1,17 @@
+{{ with .Page.Params.technologies }}
+<div class="mt-8">
+  <h3 class="text-xl font-semibold mb-4 text-base-content/80">Technologies I (like to) work with</h3>
+  <div class="flex flex-wrap gap-2">
+    {{ range . }}
+    <span class="tech-badge">
+      {{ if .src }}
+        <img src="{{ .src }}" alt="{{ .name }}" class="tech-icon" loading="lazy" />
+      {{ else }}
+        <img src="https://cdn.simpleicons.org/{{ .icon }}" alt="{{ .name }}" class="tech-icon" loading="lazy" />
+      {{ end }}
+      <span>{{ .name }}</span>
+    </span>
+    {{ end }}
+  </div>
+</div>
+{{ end }}
