@@ -13,26 +13,31 @@
     <div class="flex-1 flex gap-0">
       {{ $currentPath := .RelPermalink }}
       {{ if eq $currentPath "/" }}
-      <a class="h-16 px-4 flex items-center justify-center bg-primary/80 text-primary-content border-0 no-underline hover:bg-primary/70" href="/">Home</a>
+      <a class="h-16 px-4 md:w-auto w-16 flex items-center justify-center bg-primary/80 text-primary-content border-0 no-underline hover:bg-primary/70" href="/" aria-label="Home">
+        <i class="bi bi-house-door md:hidden"></i>
+        <span class="hidden md:inline">Home</span>
+      </a>
       {{ else }}
-      <a class="h-16 px-4 flex items-center justify-center hover:bg-base-200 border-0 no-underline" href="/">Home</a>
+      <a class="h-16 px-4 md:w-auto w-16 flex items-center justify-center hover:bg-base-200 border-0 no-underline" href="/" aria-label="Home">
+        <i class="bi bi-house-door md:hidden"></i>
+        <span class="hidden md:inline">Home</span>
+      </a>
       {{ end }}
 
       {{ if eq $currentPath "/work/" }}
-      <a class="h-16 px-4 flex items-center justify-center bg-primary/80 text-primary-content border-0 no-underline hover:bg-primary/70" href="/work">Work</a>
+      <a class="h-16 px-4 md:w-auto w-16 flex items-center justify-center bg-primary/80 text-primary-content border-0 no-underline hover:bg-primary/70" href="/work" aria-label="Work">
+        <i class="bi bi-briefcase md:hidden"></i>
+        <span class="hidden md:inline">Work</span>
+      </a>
       {{ else }}
-      <a class="h-16 px-4 flex items-center justify-center hover:bg-base-200 border-0 no-underline" href="/work">Work</a>
+      <a class="h-16 px-4 md:w-auto w-16 flex items-center justify-center hover:bg-base-200 border-0 no-underline" href="/work" aria-label="Work">
+        <i class="bi bi-briefcase md:hidden"></i>
+        <span class="hidden md:inline">Work</span>
+      </a>
       {{ end }}
     </div>
     <div class="flex-none flex gap-0">
-
-
-      <a class="h-16 px-4 flex items-center justify-center gap-2 hover:bg-base-200 border-0 no-underline" target="_blank" href="https://github.com/mach-kernel">
-        <i class="bi bi-github"></i>
-        GitHub
-      </a>
-
-            <button class="h-16 w-16 flex items-center justify-center hover:bg-base-200 border-0" id="theme-toggle" aria-label="Toggle theme">
+      <button class="h-16 w-16 flex items-center justify-center hover:bg-base-200 border-0" id="theme-toggle" aria-label="Toggle theme">
         <svg id="theme-icon-light" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden">
           <circle cx="12" cy="12" r="5"></circle>
           <line x1="12" y1="1" x2="12" y2="3"></line>
