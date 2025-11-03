@@ -1,27 +1,8 @@
 ---
 title: Work
-type: page
+type: work
 contributions:
-  duckdb:
-    name: DuckDB
-    pulls:
-      - duckdb/duckdb-java: 107
-        description: |
-          Enabled use of the Appender API for raw byte[] appends, eliminating
-          an extra copy when called from Java
-      - duckdb/duckdb: 18319
-        description: | 
-          Improved ART index projection/column binding logic to fix index
-          scans for views that had column orders differing from that of the 
-          underlying table
-      - spiceai/duckdb: 7
-        description: |
-          Enables ART index scans with composite keys by implementing a new ART
-          index scan and state for equality assertions. Before this change, composite
-          keys were only supported for enforcing uniqueness constraints. Now they can
-          be queried too!
-  datafusion:
-    name: Apache DataFusion
+  - name: Apache DataFusion
     pulls:
       - datafusion-contrib/datafusion-table-providers: 409
         description: |
@@ -48,9 +29,24 @@ contributions:
           custom logical nodes, etc.). It also enables clients to query tables in the
           scheduler's catalog without requiring clients to configure all data sources
           themselves.
-    
-  spiceai:
-    name: Spice AI
+  - name: DuckDB
+    pulls:
+      - duckdb/duckdb-java: 107
+        description: |
+          Enabled use of the Appender API for raw byte[] appends, eliminating
+          an extra copy when called from Java
+      - duckdb/duckdb: 18319
+        description: | 
+          Improved ART index projection/column binding logic to fix index
+          scans for views that had column orders differing from that of the 
+          underlying table
+      - spiceai/duckdb: 7
+        description: |
+          Enables ART index scans with composite keys by implementing a new ART
+          index scan and state for equality assertions. Before this change, composite
+          keys were only supported for enforcing uniqueness constraints. Now they can
+          be queried too!
+  - name: Spice AI
     pulls:
       - spiceai/spiceai: 1204
         description: | 
@@ -72,18 +68,20 @@ contributions:
           rank/recency boosting with customizable decay.
       - spiceai/spiceai: 7585
         description: |
-          Integrated Apache Ballista to scale Spice AI's database runtime past
-          a single process and to a clustered execution model. Implemented physical
-          planning optimizations 
+          Integrated Apache Ballista to scale database runtime past single-process
+          to a clustered, horizontally scalable execution model. Implemented physical
+          plan optimizer pipeline that increased data lake scan performance 5-7x over
+          the equivalent Spark SQL query (dynamic sizing & parallelization of
+          `DataSourceExec`, projection pushdown).
 
-  retro:
+  - name: Retrocomputing
     pulls:
       - mach-kernel/cadius: 13
         description: | 
           Implemented ser/de for AppleSingle files to/from ProDOS for the popular
           CADIUS disk image utility
   
-  swagger:
+  - name: Swagger API
     pulls:
       - swagger-api/swagger-codegen: 1441
         description: |
@@ -93,7 +91,7 @@ contributions:
             - `LOCATION` header consistency
             - Support for hypermedia style path identifiers
 
-  misc:
+  - name: Misc
     pulls:
       - komamitsu/fluency: 450
         description: | 
@@ -120,4 +118,66 @@ contributions:
       
 ---
 
-This is the work page!!!
+<div class="card bg-base-200/20 shadow-sm hover:shadow-md transition-all duration-300 mb-12 border-0 border-l-4 border-primary/30">
+<div class="card-body p-8 lg:p-12">
+<div class="flex items-start justify-between mb-6 gap-4">
+<h2 class="text-3xl font-bold">What I do</h2>
+<a href="https://github.com/mach-kernel" target="_blank" class="btn btn-outline btn-primary gap-2 flex-shrink-0">
+<i class="bi bi-github text-lg"></i>
+<span class="hidden md:inline">View my GitHub Profile</span>
+<span class="md:hidden">GitHub</span>
+</a>
+</div>
+<div class="space-y-4">
+<p class="text-lg text-base-content/80 leading-relaxed">
+I specialize in data engineering and big data systems at scale.
+</p>
+<ul class="work-list space-y-3 text-base-content/80 list-disc ml-6">
+<li>I help organizations handle massive data workloads efficiently—from petabyte-scale storage migrations to real-time query optimization and distributed system architecture.</li>
+<li>I build production-grade tooling loved by teams.</li>
+<li>Unstructured data doesn't scare me.</li>
+<li>I contribute to open-source data infrastructure projects.</li>
+</ul>
+
+<div class="mt-6 mb-2">
+<img src="https://ghchart.rshah.org/7c3aed/mach-kernel" alt="GitHub Contribution Graph" class="w-full" />
+</div>
+</div>
+
+<div class="divider my-6"></div>
+
+<div>
+<h2 class="text-2xl font-semibold mb-4 text-primary">Let's collaborate</h2>
+<ul class="work-list space-y-3 text-base-content/80 mb-6 list-disc ml-6">
+<li>Building performant data infrastructure and query engines</li>
+<li>Scaling your data organization across teams</li>
+<li>Contributing to open-source database projects</li>
+</ul>
+
+<div class="collapse collapse-arrow bg-primary/10 rounded-lg border-2 border-primary/30">
+<input type="checkbox" />
+<div class="collapse-title font-semibold text-primary">
+Get in touch
+</div>
+<div class="collapse-content text-base-content/80">
+<div class="space-y-2 pt-2">
+<p>
+<span class="font-medium">Email:</span> dstancu [at] nyu [dot] edu
+</p>
+<p>
+<span class="font-medium">PGP:</span> <code class="text-sm bg-base-200 px-2 py-1 rounded">540FFD1702007D89</code>
+</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="mb-8">
+<h2 class="text-3xl font-bold mb-4 text-primary">Open Source Contributions</h2>
+<p class="text-lg text-base-content/80 leading-relaxed">
+Here are some things I've worked on.
+</p>
+</div>
+

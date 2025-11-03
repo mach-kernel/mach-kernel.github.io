@@ -1,0 +1,50 @@
+{{ define "main" }}
+<article class="max-w-none">
+  {{ .Content }}
+
+  {{ with .Site.Data.work }}
+    {{ range .contributions }}
+      <section class="mb-12">
+        <h2 class="text-2xl font-bold mb-6 border-b border-base-200 pb-2">{{ .name }}</h2>
+
+        <div class="overflow-x-auto pr-table-wrapper">
+          <table class="w-full border-collapse">
+            <tbody>
+              {{ range .pulls }}
+              <tr class="border-b border-base-200 hover:bg-base-200/30 transition-all duration-300 cursor-pointer pr-row">
+                <td class="py-4 px-2 pl-4 align-top">
+                  <a href="{{ .meta.html_url }}" target="_blank" class="flex items-start gap-3 no-underline">
+                    <i class="bi bi-git-pull-request text-lg {{ if .meta.merged }}text-success{{ else }}text-base-content/40{{ end }} mt-1"></i>
+                    <div class="flex-1 min-w-0">
+                      <div class="mb-2">
+                        <span class="font-semibold text-base-content hover:text-primary">
+                          {{ .meta.full_name }}
+                        </span>
+                      </div>
+                      <div class="text-sm text-base-content/70 mb-2">
+                        {{ .description | markdownify }}
+                      </div>
+                      <div class="flex items-center gap-4 text-xs text-base-content/50">
+                        <span>
+                          {{ if .meta.merged }}
+                            <span class="text-success">✓ Merged</span> {{ dateFormat "Jan 2, 2006" .meta.merged_at }}
+                          {{ else }}
+                            Opened {{ dateFormat "Jan 2, 2006" .meta.created_at }}
+                          {{ end }}
+                        </span>
+                        <span class="text-success">+{{ .meta.additions }}</span>
+                        <span class="text-error">-{{ .meta.deletions }}</span>
+                      </div>
+                    </div>
+                  </a>
+                </td>
+              </tr>
+              {{ end }}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    {{ end }}
+  {{ end }}
+</article>
+{{ end }}
