@@ -49,13 +49,11 @@ contributions:
       - spiceai/datafusion-ballista: 1
         needs-upstream: true
         description: |
-          Decouple Ballista client from scheduler runtime customizations & implement
-          basic catalog RPC, allowing any Ballista client to create logical plans
-          against ANY Ballista scheduler regardless of runtime customizations (e.g.
-          without having to know about concrete implementations of `TableProvider`, 
-          custom logical nodes, etc.). It also enables clients to query tables in the
-          scheduler's catalog without requiring clients to configure all data sources
-          themselves.
+          Made Ballista clients scheduler-agnostic by implementing catalog RPC. Clients
+          can now create logical plans and query any scheduler independently of server
+          customizations—without knowing about custom table providers, logical nodes, or
+          data source configurations. The scheduler's catalog is now accessible remotely,
+          eliminating the need for clients to replicate data source setup.
   - name: OpenJDK
     links:
       - title: CVE-2023-22025
