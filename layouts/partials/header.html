@@ -8,8 +8,8 @@
     </div> -->
   <!-- </div> -->
 
-  <div class="navbar bg-base-100 shadow-sm p-0 border-b border-base-200 min-h-0 h-16 gap-0">
-    <a class="btn btn-ghost text-2xl pr-10 rounded-none h-16" href="/">David Stancu</a>
+  <div class="navbar bg-base-100 p-0 border-b border-base-200 min-h-0 h-16 gap-0">
+    <a class="btn btn-ghost text-2xl pr-10 rounded-none h-16 hover:bg-base-200" href="/">David Stancu</a>
     <div class="flex-1 flex gap-0">
       {{ $currentPath := .RelPermalink }}
       {{ if eq $currentPath "/" }}
@@ -33,6 +33,18 @@
       <a class="h-16 px-4 md:w-auto w-16 flex items-center justify-center hover:bg-base-200 border-0 no-underline" href="/work" aria-label="Work">
         <i class="bi bi-briefcase md:hidden"></i>
         <span class="hidden md:inline">Work</span>
+      </a>
+      {{ end }}
+
+      {{ if eq $currentPath "/projects/" }}
+      <a class="h-16 px-4 md:w-auto w-16 flex items-center justify-center bg-primary/80 text-primary-content border-0 no-underline hover:bg-primary/70" href="/projects" aria-label="Projects">
+        <i class="bi bi-code-square md:hidden"></i>
+        <span class="hidden md:inline">Projects</span>
+      </a>
+      {{ else }}
+      <a class="h-16 px-4 md:w-auto w-16 flex items-center justify-center hover:bg-base-200 border-0 no-underline" href="/projects" aria-label="Projects">
+        <i class="bi bi-code-square md:hidden"></i>
+        <span class="hidden md:inline">Projects</span>
       </a>
       {{ end }}
     </div>

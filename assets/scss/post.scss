@@ -1,3 +1,5 @@
+@import '_colors';
+
 .post-header {
   display: flex;
   align-items: start;
@@ -37,12 +39,13 @@
 }
 
 .post-title {
-  color: oklch(var(--bc));
+  color: oklch(var(--bc)) !important;
   transition: color 0.3s ease;
 }
 
-.post-card-group:hover .post-title {
-  color: #7c3aed !important;
+.post-card-group:hover .post-title,
+.card:hover .post-title {
+  color: $purple-primary !important;
 }
 
 .read-more-link {
@@ -51,13 +54,13 @@
   gap: 0.5rem;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #7c3aed;
+  color: $purple-primary;
   text-decoration: none;
   transition: all 0.3s ease;
 }
 
 .post-card-group:hover .read-more-link {
-  color: #6d28d9;
+  color: $purple-hover;
   gap: 0.75rem;
 }
 
@@ -78,19 +81,19 @@
   transition: all 0.2s ease;
   text-decoration: none;
 
-  background-color: #f3e8ff;
-  color: #7c3aed;
-  border: 1px solid #e9d5ff;
+  background-color: $purple-bg-light;
+  color: $purple-primary;
+  border: 1px solid $purple-border-light;
 
   &:hover {
-    background-color: #ede9fe;
-    border-color: #ddd6fe;
+    background-color: $purple-bg-medium;
+    border-color: $purple-border-medium;
     text-decoration: none;
   }
 
   [data-theme="dark"] & {
     background-color: rgba(167, 139, 250, 0.2);
-    color: #c4b5fd;
+    color: $purple-light;
     border: 1px solid rgba(167, 139, 250, 0.3);
 
     &:hover {
@@ -246,7 +249,7 @@
       background-color: transparent;
       padding: 0;
       border: none;
-      color: #f9fafb;
+      color: $bg-light;
     }
   }
 
@@ -283,12 +286,11 @@
     margin: 2rem auto;
     max-width: 40%;
     border: none;
-    border-top: 3px solid #d1d5db;
+    border-top: 3px solid $border-light;
     opacity: 0.6;
   }
 }
 
-// Video wrapper for embedded videos
 .video-wrapper {
   margin: 1.5rem 0;
 
@@ -296,41 +298,5 @@
     display: block;
     width: 100%;
     max-width: 100%;
-  }
-}
-
-// Work page PR table wrapper
-.pr-table-wrapper {
-  border-radius: 0.5rem;
-  overflow: hidden;
-  background-color: oklch(var(--b2) / 0.2);
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
-
-  &:hover {
-    background-color: oklch(var(--b2) / 0.3);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-  }
-}
-
-// Work page custom lists
-.work-list {
-  li {
-    padding-left: 0.5rem;
-
-    &::marker {
-      color: #7c3aed;
-      font-size: 1.25rem;
-    }
-  }
-}
-
-// Work page PR rows
-.pr-row {
-  border-left: 4px solid rgba(124, 58, 237, 0.3);
-  transition: all 0.3s ease;
-
-  &:hover {
-    border-left-color: rgba(124, 58, 237, 0.6);
   }
 }

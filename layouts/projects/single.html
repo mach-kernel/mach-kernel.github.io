@@ -1,0 +1,48 @@
+{{ define "main" }}
+<article class="max-w-none">
+  {{ .Content }}
+
+  {{ with .Site.Data.projects }}
+    {{ range .projects }}
+      <section class="mb-12">
+        <h2 class="text-2xl font-bold mb-6 border-b border-base-200 pb-2">{{ .name }}</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {{ range .repos }}
+          <a href="{{ .meta.html_url }}" target="_blank" class="card bg-base-200/30 hover:bg-base-200/50 shadow-sm hover:shadow-md transition-all duration-300 border border-base-200 hover:border-primary/30 no-underline group">
+            <div class="card-body p-5">
+              <div class="flex items-start justify-between gap-3 mb-3">
+                <h3 class="card-title text-lg font-semibold text-base-content group-hover:text-primary transition-colors flex-1">
+                  <i class="bi bi-github text-xl"></i>
+                  <span>{{ .meta.name }}</span>
+                </h3>
+                {{ if .meta.stargazers_count }}
+                <div class="flex items-center gap-1 text-sm text-base-content/60 flex-shrink-0">
+                  <i class="bi bi-star-fill text-warning"></i>
+                  <span class="font-medium">{{ .meta.stargazers_count }}</span>
+                </div>
+                {{ end }}
+              </div>
+
+              <p class="text-sm text-base-content/70 leading-relaxed mb-3">
+                {{ .description | markdownify }}
+              </p>
+
+              <div class="flex items-center justify-between gap-3">
+                {{ if .meta.language }}
+                <span class="badge badge-outline badge-sm">{{ .meta.language }}</span>
+                {{ end }}
+                <span class="text-xs text-primary/70 group-hover:text-primary flex items-center gap-1">
+                  View on GitHub
+                  <i class="bi bi-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                </span>
+              </div>
+            </div>
+          </a>
+          {{ end }}
+        </div>
+      </section>
+    {{ end }}
+  {{ end }}
+</article>
+{{ end }}

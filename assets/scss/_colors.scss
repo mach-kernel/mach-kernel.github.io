@@ -1,9 +1,12 @@
 // Primary accent colors used throughout the site
 $purple-primary: #7c3aed;        // violet-600 - main purple accent (links, badges, code borders)
+$purple-hover: #6d28d9;          // violet-700 - purple hover state
 $purple-dark: #6b21a8;           // violet-800 - darker purple (hover states)
 $purple-light: #c4b5fd;          // violet-300 - light purple (code headers)
 $purple-bg-light: #f3e8ff;       // violet-100 - very light purple background (badges)
+$purple-bg-medium: #ede9fe;      // violet-50 - medium purple background (hover badges)
 $purple-border-light: #e9d5ff;   // violet-200 - light purple borders (badges, inline code)
+$purple-border-medium: #ddd6fe;  // violet-300 - medium purple borders (hover badges)
 
 // Text colors
 $text-primary: #1f2937;          // gray-800 - main content text

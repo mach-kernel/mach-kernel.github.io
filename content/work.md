@@ -1,6 +1,33 @@
 ---
 title: Work
 type: work
+technologies:
+  - name: Clojure
+    icon: clojure
+  - name: Rust
+    icon: rust
+  - name: Scala
+    icon: scala
+  - name: TypeScript
+    icon: typescript
+  - name: Spark
+    icon: apachespark
+  - name: DataFusion
+    icon: apache
+  - name: Kafka
+    icon: apachekafka
+  - name: vert.x
+    icon: eclipsevertdotx
+  - name: AWS
+    src: /images/aws.png
+  - name: Kubernetes
+    icon: kubernetes
+  - name: SQL
+    icon: postgresql
+  - name: Elasticsearch
+    icon: elasticsearch
+  - name: Redis
+    icon: redis
 contributions:
   - name: Apache DataFusion
     pulls:
@@ -29,6 +56,15 @@ contributions:
           custom logical nodes, etc.). It also enables clients to query tables in the
           scheduler's catalog without requiring clients to configure all data sources
           themselves.
+  - name: OpenJDK
+    links:
+      - title: CVE-2023-22025
+        url: https://www.oracle.com/security-alerts/cpujul2023.html
+        cvss_3: 5.1
+        type: CVE
+        description: |
+          JVM HotSpot AES-NI IV counter overvlow in aarch64 JIT intrinsic
+          implementation.
   - name: DuckDB
     pulls:
       - duckdb/duckdb-java: 107
@@ -40,7 +76,7 @@ contributions:
           Improved ART index projection/column binding logic to fix index
           scans for views that had column orders differing from that of the 
           underlying table
-      - spiceai/duckdb: 7
+      - spiceai/duckdb: 8
         description: |
           Enables ART index scans with composite keys by implementing a new ART
           index scan and state for equality assertions. Before this change, composite
@@ -119,8 +155,8 @@ contributions:
 ---
 
 <div class="card bg-base-200/20 shadow-sm hover:shadow-md transition-all duration-300 mb-12 border-0 border-l-4 border-primary/30">
-<div class="card-body p-8 lg:p-12">
-<div class="flex items-start justify-between mb-6 gap-4">
+<div class="card-body p-6 lg:p-8">
+<div class="flex items-start justify-between mb-4 gap-4">
 <h2 class="text-3xl font-bold">What I do</h2>
 <a href="https://github.com/mach-kernel" target="_blank" class="btn btn-outline btn-primary gap-2 flex-shrink-0">
 <i class="bi bi-github text-lg"></i>
@@ -128,27 +164,32 @@ contributions:
 <span class="md:hidden">GitHub</span>
 </a>
 </div>
-<div class="space-y-4">
+<div class="space-y-3">
 <p class="text-lg text-base-content/80 leading-relaxed">
 I specialize in data engineering and big data systems at scale.
 </p>
-<ul class="work-list space-y-3 text-base-content/80 list-disc ml-6">
+<ul class="work-list text-base-content/80 list-disc ml-6">
 <li>I help organizations handle massive data workloads efficiently—from petabyte-scale storage migrations to real-time query optimization and distributed system architecture.</li>
 <li>I build production-grade tooling loved by teams.</li>
-<li>Unstructured data doesn't scare me.</li>
+<li>Custom file formats and unstructured data don't scare me.</li>
 <li>I contribute to open-source data infrastructure projects.</li>
 </ul>
 
-<div class="mt-6 mb-2">
+<div class="mt-4 mb-3">
 <img src="https://ghchart.rshah.org/7c3aed/mach-kernel" alt="GitHub Contribution Graph" class="w-full" />
 </div>
+
+<div class="divider my-3 w-24 mx-auto"></div>
+
+{{< technologies >}}
+
 </div>
 
-<div class="divider my-6"></div>
+<div class="divider my-3 w-24 mx-auto"></div>
 
 <div>
-<h2 class="text-2xl font-semibold mb-4 text-primary">Let's collaborate</h2>
-<ul class="work-list space-y-3 text-base-content/80 mb-6 list-disc ml-6">
+<h2 class="text-2xl font-semibold mb-3 text-primary">Let's collaborate</h2>
+<ul class="work-list text-base-content/80 mb-4 list-disc ml-6">
 <li>Building performant data infrastructure and query engines</li>
 <li>Scaling your data organization across teams</li>
 <li>Contributing to open-source database projects</li>
@@ -174,7 +215,14 @@ Get in touch
 </div>
 </div>
 
-<div class="mb-8">
+<div class="text-center my-8">
+  <a href="#contributions" class="inline-flex flex-col items-center gap-2 text-primary/70 hover:text-primary transition-all duration-300 group cursor-pointer">
+    <span class="text-sm font-medium">Scroll to see my contributions</span>
+    <i class="bi bi-chevron-down text-2xl animate-bounce group-hover:translate-y-1 transition-transform"></i>
+  </a>
+</div>
+
+<div class="mb-8" id="contributions">
 <h2 class="text-3xl font-bold mb-4 text-primary">Open Source Contributions</h2>
 <p class="text-lg text-base-content/80 leading-relaxed">
 Here are some things I've worked on.

@@ -8,31 +8,50 @@
             [clojure.string :as str]))
 
 (def cli-spec
-  {:spec {:github-api-url {:default "https://api.github.com"}
-          :work-path      {:default "content/work.md"}
-          :output-path    {:default "data/work.json"}}})
+  {:spec {:mode           {:default "work"
+                           :desc "Mode: work or projects"}
+          :github-api-url {:default "https://api.github.com"}
+          :input-path     {:default nil
+                           :desc "Path to input markdown file"}
+          :output-path    {:default nil
+                           :desc "Path to output JSON file"}}})
 
 (defn ->repos-pull-url
   [{:keys [github-api-url]} & parts]
   (let [[maybe-org-repo maybe-repo-id id] parts]
-    (cond 
+    (cond
       (and maybe-org-repo maybe-repo-id id)
-      (format "%s/repos/%s/%s/pulls/%d" github-api-url maybe-org-repo maybe-repo-id id)
-      
+      (format "%s/repos/%s/%s/pulls/%s" github-api-url maybe-org-repo maybe-repo-id id)
+
       (and maybe-org-repo maybe-repo-id)
-      (format "%s/repos/%s/pulls/%d" github-api-url maybe-org-repo maybe-repo-id)
-      
+      (format "%s/repos/%s/pulls/%s" github-api-url maybe-org-repo maybe-repo-id)
+
       :else (throw (ex-info "Can't generate URL" {:parts parts})))))
+
+(defn ->repo-url
+  [{:keys [github-api-url]} repo]
+  (format "%s/repos/%s" github-api-url repo))
 
 (defn pull->meta
   [opts org-repo pull-id]
   (let [full-name (subs (str org-repo) 1)
         uri (->repos-pull-url opts full-name pull-id)]
+    (println "Updating" full-name pull-id)
     (some-> (http/get uri)
             :body
             (json/read-str)
             (select-keys [:merged :created_at :merged_at :additions :deletions :html_url])
             (assoc :full_name full-name))))
+
+(defn repo->meta
+  [opts repo]
+  (let [uri (->repo-url opts repo)]
+    (println "Fetching repo metadata for" repo)
+    (some-> (http/get uri)
+            :body
+            (json/read-str)
+            (select-keys [:name :full_name :html_url :description :language :stargazers_count :fork])
+            (assoc :repo repo))))
 
 (defn ->contributions
   [opts form]
@@ -40,21 +59,58 @@
     form
     (let [org-repo (first form)
           pull-id  (second form)]
-      (if (and (keyword? org-repo) (number? pull-id))
+      (if (and (keyword? org-repo) (int? pull-id))
         (let [meta (pull->meta opts org-repo pull-id)]
           [:meta meta])
         (into [] form)))))
 
+(defn ->projects
+  [opts form]
+  (if-not (map? form)
+    form
+    (if-let [repo (:repo form)]
+      (let [meta (repo->meta opts repo)]
+        (merge form {:meta meta}))
+      form)))
+
+(defn hydrate-work
+  [{:keys [input-path output-path] :as opts}]
+  (when-let [{:keys [contributions]} (->> (str/split (slurp input-path) #"---" -1)
+                                          (filter (comp not str/blank?))
+                                          (first)
+                                          (yaml/parse-string))]
+    (with-open [w (io/writer output-path)]
+      (.write w (json/write-str
+                  {:contributions
+                   (walk/postwalk
+                     (partial ->contributions opts) (into [] contributions))})))))
+
+(defn hydrate-projects
+  [{:keys [input-path output-path] :as opts}]
+  (when-let [{:keys [projects]} (->> (str/split (slurp input-path) #"---" -1)
+                                     (filter (comp not str/blank?))
+                                     (first)
+                                     (yaml/parse-string))]
+    (with-open [w (io/writer output-path)]
+      (.write w (json/write-str
+                  {:projects
+                   (walk/postwalk
+                     (partial ->projects opts) (into [] projects))})))))
+
 (defn hydrate
   [& args]
-  (let [{:keys [work-path output-path] :as opts} (cli/parse-opts args cli-spec)]
-    (when-let [{:keys [contributions]} (->> (str/split (slurp work-path) #"---" -1)
-                                            (filter (comp not str/blank?))
-                                            (first)
-                                            (yaml/parse-string))]
-
-      (with-open [w (io/writer output-path)]
-        (.write w (json/write-str
-                    {:contributions
-                     (walk/postwalk
-                       (partial ->contributions opts) (into [] contributions))}))))))
+  (let [parsed (cli/parse-opts args cli-spec)
+        mode (:mode parsed)
+        opts (merge parsed
+                    (case mode
+                      "work" {:input-path (or (:input-path parsed) "content/work.md")
+                              :output-path (or (:output-path parsed) "data/work.json")}
+                      "projects" {:input-path (or (:input-path parsed) "content/projects.md")
+                                  :output-path (or (:output-path parsed) "data/projects.json")}
+                      (throw (ex-info "Invalid mode" {:mode mode}))))]
+    (println "Running in mode:" mode)
+    (println "Input:" (:input-path opts))
+    (println "Output:" (:output-path opts))
+    (case mode
+      "work" (hydrate-work opts)
+      "projects" (hydrate-projects opts))))

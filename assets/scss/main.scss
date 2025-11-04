@@ -2,5 +2,11 @@
 
 @import '_colors';
 @import '_fade-overlay';
-@import '_post';
+@import 'post';
+@import 'work';
 @import '_syntax';
+
+// Smooth scroll behavior
+html {
+  scroll-behavior: smooth;
+}
