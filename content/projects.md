@@ -6,6 +6,11 @@ projects:
     repos:
       - repo: mach-kernel/clj-rabin
         description: No dependency Clojure implementation of Rabin-Karp CDC chunker
+      - repo: intellekthq/duckdb-pst
+        description: |
+          DuckDB extension for in-place querying of Microsoft PST files with SQL.
+          Analyze emails, contacts, and appointments directly from storage with query
+          pushdown and concurrent file planning
   - name: macOS
     repos:
       - repo: mach-kernel/launchk

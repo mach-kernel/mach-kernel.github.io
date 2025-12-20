@@ -46,6 +46,10 @@ contributions:
           proto ser/de boundary
       - apache/datafusion-ballista: 1332
         description: Fix executor panics when default tmpfs is not writeable
+      - apache/datafusion: 19118
+        description: |
+          Added proto ser/de support for `AsyncFuncExec`,
+          enabling async functions (DF 49+) to work with Ballista distributed query execution
       - spiceai/datafusion-ballista: 1
         needs-upstream: true
         description: |
@@ -54,6 +58,12 @@ contributions:
           customizations—without knowing about custom table providers, logical nodes, or
           data source configurations. The scheduler's catalog is now accessible remotely,
           eliminating the need for clients to replicate data source setup.
+      - spiceai/datafusion-ballista: 4
+        needs-upstream: true
+        description: |
+          Enabled client-side planning and execution of UDFs that exist only on the
+          scheduler. Packages scalar UDF metadata (documentation, arities, return types)
+          into RPC frames, allowing clients to work with remote UDFs via stub definitions.
   - name: OpenJDK
     links:
       - title: CVE-2023-22025
